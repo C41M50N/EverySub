@@ -7,6 +7,7 @@ import {
   focusRing,
   landingButtonVariants,
 } from '@/features/landing/styles';
+import { track } from '@/lib/analytics';
 import { cn } from '@/lib/utils';
 
 const NAV_LINKS = [
@@ -81,6 +82,9 @@ export function SiteHeader() {
           <div className="flex shrink-0 items-center justify-end gap-4 sm:gap-5 md:w-55">
             <Link
               to="/login"
+              onClick={() =>
+                track('cta_clicked', { location: 'header', intent: 'sign_in' })
+              }
               className={cn(
                 'rounded-sm text-[15px]/4.5 font-medium text-ink-soft transition-colors duration-150 ease-reveal hover:text-ink',
                 focusRing,
@@ -88,7 +92,13 @@ export function SiteHeader() {
             >
               Sign in
             </Link>
-            <Link to="/login" className={landingButtonVariants({ size: 'sm' })}>
+            <Link
+              to="/login"
+              onClick={() =>
+                track('cta_clicked', { location: 'header', intent: 'start' })
+              }
+              className={landingButtonVariants({ size: 'sm' })}
+            >
               Get started
             </Link>
           </div>

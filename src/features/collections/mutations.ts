@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { createCollection, deleteCollection, duplicateCollection, renameCollection } from '@/features/collections/api';
 import { collectionsListQueryKey } from '@/features/collections/queries';
 import { notificationsQueryKey } from '@/features/notifications/queries';
+import { track } from '@/lib/analytics';
 
 export function useCreateCollection() {
   const queryClient = useQueryClient();
@@ -10,6 +11,7 @@ export function useCreateCollection() {
   return useMutation({
     mutationFn: (name: string) => createCollection({ data: { name } }),
     onSuccess: () => {
+      track('collection_created');
       return queryClient.invalidateQueries({
         queryKey: collectionsListQueryKey,
       });

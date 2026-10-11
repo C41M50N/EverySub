@@ -61,6 +61,7 @@ import { parseSubscriptionImport } from '@/features/subscriptions/import';
 import { useImportSubscriptions } from '@/features/subscriptions/mutations';
 import { subscriptionsQueryOptions } from '@/features/subscriptions/queries';
 import type { ImportSubscriptionItem } from '@/features/subscriptions/schema';
+import { track } from '@/lib/analytics';
 
 export type ImportTarget = { id: string; name: string };
 
@@ -170,6 +171,8 @@ function ImportDialog({
   // Async steps check this so nothing continues, or uploads, after closing.
   const closedRef = useRef(false);
   const startedWithFilesRef = useRef(false);
+  // Where the candidates under review came from, for analytics.
+  const importKindRef = useRef<ExportFileFormat | 'smart'>('json');
 
   // Also stops work when the parent closes the dialog or it unmounts, such as
   // after navigating away mid-run.
@@ -291,6 +294,7 @@ function ImportDialog({
       return;
     }
 
+    importKindRef.current = format;
     await openReview(candidates);
   }
 
@@ -386,6 +390,7 @@ function ImportDialog({
         return;
       }
 
+      importKindRef.current = 'smart';
       await openReview(response.candidates, controller.signal);
     } finally {
       // A newer run may have started after this one was cancelled.
@@ -453,6 +458,10 @@ function ImportDialog({
       { collectionId: collection.id, items },
       {
         onSuccess: (result) => {
+          track('import_completed', {
+            kind: importKindRef.current,
+            count: result.subscriptionsImported,
+          });
           toast.success(formatImportResult(result));
           onImported?.();
           onOpenChange(false);

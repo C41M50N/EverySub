@@ -39,6 +39,12 @@ const QUESTIONS = [
       'Smart import sends the files you choose to OpenAI to find recurring charges, and EverySub doesn’t store them. You review everything it finds before anything is saved. EverySub keeps a record of how much you use smart import, not what was in your files.',
   },
   {
+    id: 'analytics',
+    question: 'Does EverySub track how I use it?',
+    answer:
+      'Yes. EverySub uses Umami, a cookieless analytics tool hosted by EverySub, to see which pages and features people use. When you’re signed in, page visits and actions like adding a subscription are linked to your account ID. Analytics never includes your name, email, subscription names, prices, or anything you type.',
+  },
+  {
     id: 'refunds',
     question: 'Can I cancel my plan or get a refund?',
     answer:
