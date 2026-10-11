@@ -46,4 +46,6 @@ Notifications send subscription names, dates, and amounts only to destinations t
 
 For smart import, the app sends selected files to OpenAI for extraction and does not store the uploaded files. Candidates are shown for review before being written as subscriptions. The app records smart import usage metadata, so product privacy claims should distinguish file content from operational metadata.
 
+Product analytics run on a self-hosted, cookieless Umami instance and only on the production domain. Pages are reported as route templates, so collection IDs and search text aren't sent. Events record actions such as adding a subscription, importing, or adding a notification destination, with counts and types only. Signed-in activity is linked to the opaque account ID, never to a name or email, and never includes subscription names, prices, or user-entered text.
+
 EverySub is a paid product with the individual user as the customer. Pricing and tiers are undecided. Revenue should not depend on selling user data, promoting subscriptions, or distorting guidance about what to keep.

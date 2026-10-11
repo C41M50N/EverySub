@@ -40,6 +40,7 @@ import { collectionsQueryOptions } from '@/features/collections/queries';
 import { LAST_COLLECTION_DELETE_MESSAGE } from '@/features/collections/schema';
 import { ImportSubscriptionsDialog } from '@/features/imports/components/import-subscriptions-dialog';
 import type { SubscriptionTransferFormat } from '@/features/subscriptions/export';
+import { track } from '@/lib/analytics';
 
 type CollectionTarget = { id: string; name: string };
 
@@ -94,6 +95,7 @@ export function CollectionSwitcher() {
     document.body.appendChild(anchor);
     anchor.click();
     anchor.remove();
+    track('subscriptions_exported', { format });
   }
 
   function handleDelete(collection: CollectionTarget) {

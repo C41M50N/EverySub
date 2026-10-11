@@ -16,6 +16,7 @@ import { Button } from '@/components/ui/button';
 import { Toaster } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { NotFoundPage } from '@/features/landing/components/not-found-page';
+import { umamiScript, usePageviewTracking } from '@/lib/analytics';
 
 import appCss from '../styles.css?url';
 
@@ -49,6 +50,7 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
         href: appCss,
       },
     ],
+    scripts: [umamiScript],
   }),
   notFoundComponent: NotFoundPage,
   errorComponent: RootError,
@@ -61,6 +63,8 @@ function RootLayout() {
 }
 
 function RootDocument({ children }: { children: React.ReactNode }) {
+  usePageviewTracking();
+
   return (
     <html lang="en" suppressHydrationWarning>
       <head>

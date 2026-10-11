@@ -11,6 +11,7 @@ import {
   panelColumn,
 } from '@/features/landing/styles';
 import { useRevealOnce } from '@/hooks/use-reveal-once';
+import { track } from '@/lib/analytics';
 import { cn } from '@/lib/utils';
 
 export function CtaSection() {
@@ -37,6 +38,9 @@ export function CtaSection() {
         <div className="flex w-full max-w-96 flex-col gap-3 pt-2 sm:w-auto sm:max-w-none sm:flex-row">
           <Link
             to="/login"
+            onClick={() =>
+              track('cta_clicked', { location: 'closing', intent: 'start' })
+            }
             className={landingButtonVariants({
               variant: 'inverse',
               size: 'xl',
@@ -47,6 +51,9 @@ export function CtaSection() {
           </Link>
           <Link
             to="/login"
+            onClick={() =>
+              track('cta_clicked', { location: 'closing', intent: 'sign_in' })
+            }
             className={landingButtonVariants({
               variant: 'inverse-outline',
               size: 'xl',

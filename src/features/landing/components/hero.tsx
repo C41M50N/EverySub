@@ -12,6 +12,7 @@ import {
   landingButtonVariants,
   panelColumn,
 } from '@/features/landing/styles';
+import { track } from '@/lib/analytics';
 import { cn } from '@/lib/utils';
 
 const REASSURANCES = [
@@ -61,6 +62,9 @@ export function Hero() {
           <div className="flex w-full max-w-96 flex-col gap-3 sm:w-auto sm:max-w-none sm:flex-row">
             <Link
               to="/login"
+              onClick={() =>
+                track('cta_clicked', { location: 'hero', intent: 'start' })
+              }
               className={landingButtonVariants({
                 size: 'lg',
                 className:

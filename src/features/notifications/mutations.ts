@@ -22,24 +22,28 @@ import type {
   updateDestinationInputSchema,
 } from '@/features/notifications/schema';
 import { subscriptionsListQueryKey } from '@/features/subscriptions/queries';
+import { track } from '@/lib/analytics';
 
 // Settings, destinations, routes, and inclusion all feed the same few views,
 // so every change refreshes everything under the notifications key.
 function useNotificationsMutation<Variables, Result>(
   mutationFn: (variables: Variables) => Promise<Result>,
-  options: { invalidateSubscriptions?: boolean } = {},
+  options: { invalidateSubscriptions?: boolean; onSuccess?: (variables: Variables) => void } = {},
 ) {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn,
-    onSuccess: () =>
-      Promise.all([
+    onSuccess: (_result, variables) => {
+      options.onSuccess?.(variables);
+
+      return Promise.all([
         queryClient.invalidateQueries({ queryKey: notificationsQueryKey }),
         options.invalidateSubscriptions
           ? queryClient.invalidateQueries({ queryKey: subscriptionsListQueryKey })
           : undefined,
-      ]),
+      ]);
+    },
   });
 }
 
@@ -50,13 +54,16 @@ export function useSaveNotificationSchedule() {
 }
 
 export function useCreateWebhookDestination() {
-  return useNotificationsMutation((input: z.infer<typeof createWebhookDestinationInputSchema>) =>
-    createWebhookDestination({ data: input }),
+  return useNotificationsMutation(
+    (input: z.infer<typeof createWebhookDestinationInputSchema>) => createWebhookDestination({ data: input }),
+    { onSuccess: (input) => track('notification_destination_created', { kind: input.type }) },
   );
 }
 
 export function useCreateEmailDestination() {
-  return useNotificationsMutation((name: string) => createEmailDestination({ data: { name } }));
+  return useNotificationsMutation((name: string) => createEmailDestination({ data: { name } }), {
+    onSuccess: () => track('notification_destination_created', { kind: 'email' }),
+  });
 }
 
 export function useUpdateDestination() {

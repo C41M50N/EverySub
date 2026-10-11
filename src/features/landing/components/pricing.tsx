@@ -6,6 +6,7 @@ import {
   landingButtonVariants,
   sectionHeading,
 } from '@/features/landing/styles';
+import { track } from '@/lib/analytics';
 import { cn } from '@/lib/utils';
 
 type Plan = {
@@ -124,6 +125,13 @@ export function Pricing() {
             </p>
             <Link
               to="/login"
+              onClick={() =>
+                track('cta_clicked', {
+                  location: 'pricing',
+                  intent: 'start',
+                  plan: plan.name,
+                })
+              }
               className={landingButtonVariants({
                 variant: plan.featured ? 'primary' : 'secondary',
                 className: plan.featured && 'shadow-[inset_0_1px_0_#FFFFFF24]',

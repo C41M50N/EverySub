@@ -23,6 +23,7 @@ import type {
   importSubscriptionsInputSchema,
   updateSubscriptionInputSchema,
 } from '@/features/subscriptions/schema';
+import { track } from '@/lib/analytics';
 
 export type CreateSubscriptionInput = z.infer<typeof createSubscriptionInputSchema>;
 export type UpdateSubscriptionInput = z.infer<typeof updateSubscriptionInputSchema>;
@@ -49,6 +50,7 @@ export function useCreateSubscription() {
   return useMutation({
     mutationFn: (input: CreateSubscriptionInput) => createSubscription({ data: input }),
     onSuccess: async () => {
+      track('subscription_created');
       await invalidateSubscriptionViews(queryClient);
       refreshOnboarding(queryClient);
     },
