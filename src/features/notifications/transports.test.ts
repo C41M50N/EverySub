@@ -13,7 +13,8 @@ vi.mock('resend', () => ({
   },
 }));
 
-vi.mock('varlock/env', () => ({
+vi.mock('varlock/env', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('varlock/env')>()),
   ENV: { RESEND_API_KEY: 're_test', RESEND_FROM_ADDRESS: 'EverySub <notify@mail.example.com>' },
 }));
 

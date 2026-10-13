@@ -125,7 +125,7 @@ export function usePageviewTracking() {
     }
 
     // An unmatched path has no template, so it's reported as visited.
-    const path = leaf.globalNotFound ? pathname : leaf.fullPath;
+    const path = router.matchRoute({ to: leaf.fullPath }, { includeSearch: false }) ? leaf.fullPath : pathname;
     const userId = 'user' in leaf.context ? leaf.context.user.id : undefined;
 
     currentPage = {
