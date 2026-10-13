@@ -30,15 +30,15 @@
     "@date-fns/tz": "^1.5.0",
     "@fontsource-variable/inter": "^5.2.8",
     "@tailwindcss/vite": "^4.3.2",
-    "@tanstack/react-devtools": "^0.10.8",
+    "@tanstack/react-devtools": "^0.10.13",
     "@tanstack/react-query": "^5.101.2",
     "@tanstack/react-query-devtools": "^5.101.2",
-    "@tanstack/react-router": "^1.170.16",
-    "@tanstack/react-router-devtools": "^1.167.0",
+    "@tanstack/react-router": "^1.170.44",
+    "@tanstack/react-router-devtools": "^1.167.2",
     "@tanstack/react-router-ssr-query": "^1.167.1",
-    "@tanstack/react-start": "^1.168.26",
+    "@tanstack/react-start": "^1.169.1",
     "@tanstack/react-table": "^8.21.3",
-    "@tanstack/router-plugin": "^1.168.18",
+    "@tanstack/router-plugin": "^1.168.45",
     "ai": "^7.0.116",
     "better-auth": "^1.6.23",
     "class-variance-authority": "^0.7.1",
@@ -70,7 +70,7 @@
   "devDependencies": {
     "@react-email/ui": "6.11.0",
     "@tailwindcss/typography": "^0.5.20",
-    "@tanstack/devtools-vite": "^0.5.5",
+    "@tanstack/devtools-vite": "^0.8.5",
     "@testing-library/dom": "^10.4.1",
     "@testing-library/react": "^16.3.2",
     "@types/node": "^22.20.0",
@@ -87,8 +87,7 @@
     "portless": "^0.15.4",
     "railway": "^3.12.0",
     "typescript": "^6.0.3",
-    "vite": "^7.3.6",
-    "vite-tsconfig-paths": "^5.1.4",
-    "vitest": "^3.2.6"
+    "vite": "^8.3.4",
+    "vitest": "^4.1.11"
   }
 }

@@ -1,4 +1,4 @@
-import { createStart } from '@tanstack/react-start';
+import { createCsrfMiddleware, createStart } from '@tanstack/react-start';
 
 /**
  * The app renders on the client. Public pages opt back into SSR with
@@ -7,4 +7,9 @@ import { createStart } from '@tanstack/react-start';
  */
 export const startInstance = createStart(() => ({
   defaultSsr: false,
+  requestMiddleware: [
+    createCsrfMiddleware({
+      filter: (ctx) => ctx.handlerType === 'serverFn',
+    }),
+  ],
 }));
