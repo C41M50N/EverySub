@@ -20,6 +20,8 @@ TanStack Start and Router, React, TanStack Query, Better Auth with Google sign-i
 
 ## Local setup
 
+Install [Node.js 24 or newer](https://nodejs.org/en/download) and [Bun](https://bun.sh). If you use nvm, run `nvm install` and `nvm use` to select the Node 24 version declared in `.nvmrc`.
+
 Install dependencies and create `.env.local` in the project root. [`.env.schema`](.env.schema) defines the required and optional variables.
 
 ```bash
