@@ -8,7 +8,7 @@ Production runs:
 - `web`: TanStack Start, served on port 8080. Existing Drizzle migrations run with `bun run db:migrate` before each deployment. A failed migration stops deployment. `/api/health` checks Postgres and returns 200 or 503 without database details.
 - `scheduled-jobs`: `bun run jobs:run` every five minutes, with no restart after exit. It records invoices and delivers due notifications, then closes the database pool.
 
-Both production app services use `C41M50N/SubTrack`, branch `main`, Railpack, Bun 1.4.2, and Node 22. Development dependencies stay in the image because pre-deploy migrations use `drizzle-kit`. The install hook sets Git hooks only in a Git checkout.
+Both production app services use `C41M50N/EverySub`, branch `main`, Railpack, Bun 1.4.2, and Node 24. Development dependencies stay in the image because pre-deploy migrations use `drizzle-kit`. The install hook sets Git hooks only in a Git checkout.
 
 Development runs only `Postgres`, retaining its existing database, volume, and public connection. Run the web app with `bun run dev` and scheduled jobs with `bun run jobs:run` locally. Set local `DATABASE_URL` to development Postgres's `DATABASE_PUBLIC_URL`; the private Railway URL is not reachable locally. Apply committed migrations to the development database locally with `bun run db:migrate`.
 

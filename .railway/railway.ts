@@ -33,7 +33,7 @@ export default defineRailway((ctx) => {
   const env = {
     NODE_ENV: 'production',
     RAILPACK_BUN_VERSION: '1.4.2',
-    RAILPACK_NODE_VERSION: '22',
+    RAILPACK_NODE_VERSION: '24',
     // Pre-deploy migrations need drizzle-kit in the runtime image.
     RAILPACK_PRUNE_DEPS: 'false',
     DATABASE_URL: database.env.DATABASE_URL,
@@ -48,7 +48,7 @@ export default defineRailway((ctx) => {
     RESEND_FROM_ADDRESS: ctx.shared.RESEND_FROM_ADDRESS,
     RESEND_WEBHOOK_SECRET: ctx.shared.RESEND_WEBHOOK_SECRET,
   };
-  const source = github('C41M50N/SubTrack', { branch: 'main' });
+  const source = github('C41M50N/EverySub', { branch: 'main' });
   const build = { builder: 'RAILPACK' as const, buildCommand: 'bun run build' };
   const replicas = { [region]: 1 };
 
