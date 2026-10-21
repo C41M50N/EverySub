@@ -16,6 +16,13 @@ See [TanStack Start x Query](./tanstack-start-query.md) for route data conventio
 
 ## Rendering
 
-`src/start.ts` sets `defaultSsr: false`, so the signed-in app renders on the client. The public pages (`/`, `/login`, and the 404 page) set `ssr: true` and are server-rendered. The root route sets `ssr: true` as well, because a route can't render on the server when its parent doesn't.
+Public routes (`/`, `/login`, the 404 page) are server-rendered. That is TanStack Router's default, so a new public page needs no extra configuration.
 
-Give any new public page `ssr: true`.
+The signed-in app's components render on the client. `src/routes/_protected/route.tsx` sets `ssr: 'data-only'`, and TanStack Router applies that setting to every child route, so anything placed under `_protected` is client-rendered automatically. On the initial request the server still runs `beforeLoad` and loaders for the protected routes, so the session check happens on the server and an unauthenticated visitor gets an HTTP redirect to `/login`. The server renders the `<html>` shell and the root layout, sends the `beforeLoad` context and loader data along, and the browser renders the page.
+
+Two alternatives if you need them:
+
+- `ssr: false` on `_protected` moves `beforeLoad` and loaders to the client as well. The server then sends the shell for every protected URL and the redirect happens after hydration.
+- A `pendingComponent` on `_protected` is what the server renders in place of the client-only subtree. Without one, that area is empty until hydration.
+
+SPA mode (`spa: { enabled: true }` in `vite.config.ts`) is intentionally off. It replaces server rendering for every route with a static shell, which is the opposite of what the public pages need.

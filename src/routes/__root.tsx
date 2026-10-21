@@ -25,7 +25,6 @@ interface MyRouterContext {
 }
 
 export const Route = createRootRouteWithContext<MyRouterContext>()({
-  ssr: true,
   head: () => ({
     meta: [
       {
