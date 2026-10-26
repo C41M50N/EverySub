@@ -2,6 +2,7 @@ import { createServerFn } from '@tanstack/react-start';
 
 import { requireAuthMiddleware } from '@/features/auth/middleware';
 import {
+  categorizeSubscriptionsInputSchema,
   clearSubscriptionsInputSchema,
   createSubscriptionInputSchema,
   deactivateSubscriptionsInputSchema,
@@ -15,6 +16,7 @@ import {
   updateSubscriptionInputSchema,
 } from '@/features/subscriptions/schema';
 import {
+  categorizeMySubscriptions,
   clearMySubscriptions,
   createMySubscription,
   deactivateMySubscriptions,
@@ -77,6 +79,19 @@ export const moveSubscriptions = createServerFn({ method: 'POST' })
         userId: auth.userId,
         subscriptionIds: data.subscriptionIds,
         collectionId: data.collectionId,
+      }),
+    );
+  });
+
+export const categorizeSubscriptions = createServerFn({ method: 'POST' })
+  .middleware([requireAuthMiddleware])
+  .validator(categorizeSubscriptionsInputSchema)
+  .handler(async ({ context: { auth }, data }) => {
+    return withUserFacingErrors('Failed to change category. Refresh and try again.', () =>
+      categorizeMySubscriptions({
+        userId: auth.userId,
+        subscriptionIds: data.subscriptionIds,
+        categoryId: data.categoryId,
       }),
     );
   });

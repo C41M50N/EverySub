@@ -16,6 +16,7 @@ import { DeleteSubscriptionDialog } from '@/features/subscriptions/components/de
 import { MonthlyBreakdown } from '@/features/subscriptions/components/monthly-breakdown';
 import { useMoveSubscriptionsWithFeedback } from '@/features/subscriptions/components/move-subscriptions';
 import { ReactivateSubscriptionDialog } from '@/features/subscriptions/components/reactivate-subscription-dialog';
+import { SetCategoryDialog } from '@/features/subscriptions/components/set-category-dialog';
 import { SubscriptionFormDialog } from '@/features/subscriptions/components/subscription-form-dialog';
 import {
   SubscriptionsTable,
@@ -97,6 +98,10 @@ function RouteComponent() {
     SubscriptionRecord[]
   >([]);
   const [reactivateOpen, setReactivateOpen] = useState(false);
+  const [categorizeTargets, setCategorizeTargets] = useState<
+    SubscriptionRecord[]
+  >([]);
+  const [categorizeOpen, setCategorizeOpen] = useState(false);
   const data = view === 'active' ? activeSubscriptions : inactiveSubscriptions;
 
   // This page stays mounted when navigating to another collection, such as
@@ -153,6 +158,11 @@ function RouteComponent() {
     move(selectedItems, target, {
       onSuccess: () => table.resetRowSelection(),
     });
+  }
+
+  function handleBulkCategorize() {
+    setCategorizeTargets(selectedItems);
+    setCategorizeOpen(true);
   }
 
   function handleBulkDeactivate() {
@@ -217,6 +227,7 @@ function RouteComponent() {
             isMovePending={isMovePending}
             onViewChange={handleViewChange}
             onBulkMove={handleBulkMove}
+            onBulkCategorize={handleBulkCategorize}
             onBulkDeactivate={handleBulkDeactivate}
             onBulkReactivate={handleBulkReactivate}
             onBulkDelete={handleBulkDelete}
@@ -252,6 +263,15 @@ function RouteComponent() {
         collectionId={collectionId}
         subscription={editTarget}
         categories={categories}
+      />
+
+      <SetCategoryDialog
+        open={categorizeOpen}
+        onOpenChange={setCategorizeOpen}
+        collectionId={collectionId}
+        subscriptions={categorizeTargets}
+        categories={categories}
+        onCategorized={() => table.resetRowSelection()}
       />
 
       <DeleteSubscriptionDialog

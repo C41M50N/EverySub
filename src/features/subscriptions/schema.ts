@@ -97,6 +97,10 @@ export const moveSubscriptionsInputSchema = subscriptionIdsInputSchema.extend({
   collectionId: z.string().min(1),
 });
 
+export const categorizeSubscriptionsInputSchema = subscriptionIdsInputSchema.extend({
+  categoryId: categoryIdSchema,
+});
+
 export const subscriptionTransferFormatSchema = z.enum(['json', 'csv']);
 
 export const exportSubscriptionsInputSchema = z.object({

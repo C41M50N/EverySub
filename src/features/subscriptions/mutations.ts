@@ -6,6 +6,7 @@ import { collectionsListQueryKey } from '@/features/collections/queries';
 import { notificationsQueryKey } from '@/features/notifications/queries';
 import { onboardingQueryKey } from '@/features/onboarding/queries';
 import {
+  categorizeSubscriptions,
   clearSubscriptions,
   createSubscription,
   deactivateSubscriptions,
@@ -98,6 +99,15 @@ export function useUndoDeactivation() {
   return useLifecycleMutation((input: { subscriptionIds: string[]; deactivatedAt: string }) =>
     undoDeactivation({ data: input }),
   );
+}
+
+export function useCategorizeSubscriptions() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: { subscriptionIds: string[]; categoryId: string }) => categorizeSubscriptions({ data: input }),
+    onSuccess: () => invalidateSubscriptionViews(queryClient),
+  });
 }
 
 // A move changes subscriptions in two collections and may create categories in

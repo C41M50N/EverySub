@@ -136,6 +136,7 @@ type SubscriptionsTableProps = {
   isMovePending: boolean;
   onViewChange: (view: SubscriptionView) => void;
   onBulkMove: (target: CollectionRecord) => void;
+  onBulkCategorize: () => void;
   onBulkDeactivate: () => void;
   onBulkReactivate: () => void;
   onBulkDelete: () => void;
@@ -152,6 +153,7 @@ export function SubscriptionsTable({
   isMovePending,
   onViewChange,
   onBulkMove,
+  onBulkCategorize,
   onBulkDeactivate,
   onBulkReactivate,
   onBulkDelete,
@@ -184,6 +186,7 @@ export function SubscriptionsTable({
         isMovePending={isMovePending}
         onViewChange={onViewChange}
         onBulkMove={onBulkMove}
+        onBulkCategorize={onBulkCategorize}
         onBulkDeactivate={onBulkDeactivate}
         onBulkReactivate={onBulkReactivate}
         onBulkDelete={onBulkDelete}

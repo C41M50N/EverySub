@@ -470,6 +470,51 @@ export async function deleteMySubscriptions(input: { userId: string; subscriptio
   });
 }
 
+/** Sets one category on several subscriptions in the same collection. */
+export async function categorizeMySubscriptions(input: {
+  userId: string;
+  subscriptionIds: string[];
+  categoryId: string;
+}) {
+  return db.transaction(async (tx) => {
+    const subscriptionFilter = and(
+      eq(subscriptionTable.userId, input.userId),
+      inArray(subscriptionTable.id, input.subscriptionIds),
+    );
+    // Lock the rows so a concurrent move can't change their collection between
+    // the category check and the update.
+    const subscriptions = await tx
+      .select({ collectionId: subscriptionTable.collectionId })
+      .from(subscriptionTable)
+      .where(subscriptionFilter)
+      .for('update');
+
+    assertEverySubscriptionFound(subscriptions.length, input.subscriptionIds.length);
+
+    // Categories are collection-scoped, so every subscription must be in the
+    // category's collection.
+    const [collectionId, ...otherCollectionIds] = new Set(
+      subscriptions.map((subscription) => subscription.collectionId),
+    );
+
+    if (!collectionId || otherCollectionIds.length > 0) {
+      throw new UserFacingError(SUBSCRIPTIONS_CHANGED_MESSAGE);
+    }
+
+    await assertCategoryInCollection(input.userId, collectionId, input.categoryId, tx);
+
+    const updated = await tx
+      .update(subscriptionTable)
+      .set({ categoryId: input.categoryId })
+      .where(subscriptionFilter)
+      .returning();
+
+    assertEverySubscriptionFound(updated.length, input.subscriptionIds.length);
+
+    return updated;
+  });
+}
+
 /** A CASE expression that picks a text value per subscription ID. */
 function textBySubscriptionId(valueById: [id: string, value: string | null][]) {
   const cases = valueById.map(([id, value]) => sql`when ${id} then ${value}::text`);

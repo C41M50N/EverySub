@@ -3,6 +3,7 @@ import {
   CirclePauseIcon,
   RotateCcwIcon,
   SearchIcon,
+  TagIcon,
   Trash2Icon,
   XIcon,
 } from 'lucide-react';
@@ -27,6 +28,7 @@ type SubscriptionsTableToolbarProps = {
   isMovePending: boolean;
   onViewChange: (view: SubscriptionView) => void;
   onBulkMove: (target: CollectionRecord) => void;
+  onBulkCategorize: () => void;
   onBulkDeactivate: () => void;
   onBulkReactivate: () => void;
   onBulkDelete: () => void;
@@ -42,6 +44,7 @@ export function SubscriptionsTableToolbar({
   isMovePending,
   onViewChange,
   onBulkMove,
+  onBulkCategorize,
   onBulkDeactivate,
   onBulkReactivate,
   onBulkDelete,
@@ -109,6 +112,10 @@ export function SubscriptionsTableToolbar({
             disabled={isMovePending}
             onSelect={onBulkMove}
           />
+          <Button variant="outline" size="sm" onClick={onBulkCategorize}>
+            <TagIcon data-icon="inline-start" />
+            Set category
+          </Button>
           {view === 'active' ? (
             <Button variant="outline" size="sm" onClick={onBulkDeactivate}>
               <CirclePauseIcon data-icon="inline-start" />
