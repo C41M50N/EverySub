@@ -36,6 +36,8 @@ type InvoiceListCardProps = {
  *
  * Rows are intentionally denser than the Invoices table: icon, name, relative
  * date, amount. Anything more belongs on the Invoices page the header links to.
+ * The list scrolls past a fixed height so a busy window can't stretch the card,
+ * and shrinks below it when the card is given less room.
  */
 export function InvoiceListCard({
   title,
@@ -50,7 +52,7 @@ export function InvoiceListCard({
   now,
 }: InvoiceListCardProps) {
   return (
-    <Card className="gap-0 py-0 roomy:min-h-0">
+    <Card className="min-h-0 gap-0 py-0">
       <CardHeader className="shrink-0 border-b py-4">
         <CardTitle className="text-base">{title}</CardTitle>
         <CardDescription>{description}</CardDescription>
@@ -103,7 +105,7 @@ export function InvoiceListCard({
         ) : invoices.length === 0 ? (
           <EmptyRows>{emptyMessage}</EmptyRows>
         ) : (
-          <ScrollArea className="max-h-80 roomy:min-h-0 roomy:max-h-none roomy:flex-1">
+          <ScrollArea className="max-h-80 min-h-0 flex-1">
             <ul className="space-y-1 p-2">
               {invoices.map((invoice) => (
                 <li
@@ -143,7 +145,7 @@ export function InvoiceListCard({
 
 function EmptyRows({ children }: { children: React.ReactNode }) {
   return (
-    <div className="grid min-h-40 place-items-center px-6 text-center text-sm text-muted-foreground roomy:flex-1">
+    <div className="grid min-h-40 flex-1 place-items-center px-6 text-center text-sm text-muted-foreground">
       <div>{children}</div>
     </div>
   );

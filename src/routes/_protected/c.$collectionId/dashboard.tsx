@@ -287,42 +287,48 @@ function CollectionDashboard({ collectionId }: { collectionId: string }) {
             <>
               {metrics}
 
-              <div className="grid items-start gap-6 lg:grid-cols-3">
-                <div className="flex min-w-0 flex-col gap-6 lg:col-span-2">
+              <div className="grid items-start gap-6 lg:grid-cols-3 roomy:flex-1">
+                <div className="@container flex min-w-0 flex-col gap-6 lg:col-span-2 roomy:self-stretch">
                   <SpendTrendChart
                     points={trend}
                     isLoading={historyQuery.isPending}
                     isError={historyQuery.isError}
                     onRetry={() => void historyQuery.refetch()}
                   />
-                  <InvoiceListCard
-                    title="Upcoming invoices"
-                    description={`Expected in the next ${UPCOMING_LIST_DAYS} days`}
-                    view="upcoming"
-                    collectionId={collectionId}
-                    invoices={upcoming}
-                    emptyMessage={`No invoices expected in the next ${UPCOMING_LIST_DAYS} days.`}
-                    now={now}
-                  />
+                  {/* Side by side once each card has room for its rows. The
+                      pair stretches to the taller card so their edges line up,
+                      and on a roomy screen the lists shrink to keep the page
+                      within the window, down to a few rows. */}
+                  <div className="grid gap-6 @xl:grid-cols-2 roomy:@xl:max-h-max roomy:@xl:min-h-72 roomy:@xl:grow roomy:@xl:basis-0">
+                    <InvoiceListCard
+                      title="Upcoming invoices"
+                      description={`Expected in the next ${UPCOMING_LIST_DAYS} days`}
+                      view="upcoming"
+                      collectionId={collectionId}
+                      invoices={upcoming}
+                      emptyMessage={`No invoices expected in the next ${UPCOMING_LIST_DAYS} days.`}
+                      now={now}
+                    />
+                    <InvoiceListCard
+                      title="Recently recorded"
+                      description="The latest invoices EverySub has recorded"
+                      view="history"
+                      collectionId={collectionId}
+                      invoices={recent}
+                      emptyMessage={
+                        nextCharge
+                          ? `Nothing recorded yet. ${nextCharge.name}’s charge ${formatUpcomingDay(nextCharge.date, now)} will show up here.`
+                          : 'No invoices have been recorded yet.'
+                      }
+                      isLoading={historyQuery.isPending}
+                      isError={historyQuery.isError}
+                      onRetry={() => void historyQuery.refetch()}
+                      now={now}
+                    />
+                  </div>
                 </div>
-                <div className="flex min-w-0 flex-col gap-6">
+                <div className="min-w-0">
                   <CategoryBreakdown entries={categories} />
-                  <InvoiceListCard
-                    title="Recently recorded"
-                    description="The latest invoices EverySub has recorded"
-                    view="history"
-                    collectionId={collectionId}
-                    invoices={recent}
-                    emptyMessage={
-                      nextCharge
-                        ? `Nothing recorded yet. ${nextCharge.name}’s charge ${formatUpcomingDay(nextCharge.date, now)} will show up here.`
-                        : 'No invoices have been recorded yet.'
-                    }
-                    isLoading={historyQuery.isPending}
-                    isError={historyQuery.isError}
-                    onRetry={() => void historyQuery.refetch()}
-                    now={now}
-                  />
                 </div>
               </div>
             </>
