@@ -123,7 +123,7 @@ export function MoveToSubmenu({ targets, onSelect }: MoveTargetsProps) {
   );
 }
 
-/** The selection toolbar "Move to" button and its collection dropdown. */
+/** The selection bar "Move to" button and its collection dropdown. */
 export function MoveToButton({
   targets,
   disabled,
@@ -141,12 +141,7 @@ export function MoveToButton({
       <Tooltip>
         <TooltipTrigger
           render={
-            <Button
-              variant="outline"
-              size="sm"
-              disabled
-              focusableWhenDisabled
-            />
+            <Button variant="ghost" size="sm" disabled focusableWhenDisabled />
           }
         >
           {label}
@@ -160,7 +155,7 @@ export function MoveToButton({
     <DropdownMenu>
       <DropdownMenuTrigger
         disabled={disabled}
-        render={<Button variant="outline" size="sm" />}
+        render={<Button variant="ghost" size="sm" />}
       >
         {label}
       </DropdownMenuTrigger>
