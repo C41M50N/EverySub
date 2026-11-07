@@ -1,0 +1,197 @@
+name: Dependency maintenance
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 3 1 * *'
+      timezone: America/Detroit
+
+permissions:
+  actions: write # dispatch CI on the dependency branch
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: dependency-maintenance
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Check out the default branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+
+      - name: Setup
+        uses: ./.github/setup
+
+      - name: Update dependencies within declared ranges
+        run: >-
+          bunx taze@21.1.0 -w
+          --maturity-period 7
+          --no-github-actions
+
+      - name: Regenerate the lockfile
+        run: bun install --ignore-scripts
+
+      - name: Plan and apply available security fixes
+        id: audit
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          set +e
+          plan_json="$(bun audit fix --dry-run --json)"
+          plan_status=$?
+          set -e
+
+          if ! jq -e '
+            type == "object" and
+            (.fixes | type == "array") and
+            (.fixed | type == "number") and
+            (.remaining | type == "number") and
+            (.blocked | type == "array") and
+            (.unfixable | type == "array")
+          ' >/dev/null <<<"$plan_json"; then
+            echo "::error::Bun Audit dry run returned invalid JSON (exit $plan_status)."
+            exit 1
+          fi
+
+          planned="$(jq -r '.fixes | length' <<<"$plan_json")"
+          applied=0
+          result_json="$plan_json"
+
+          if (( planned > 0 )); then
+            set +e
+            result_json="$(bun audit fix --json --ignore-scripts)"
+            apply_status=$?
+            set -e
+
+            if ! jq -e '
+              type == "object" and
+              (.fixed | type == "number") and
+              (.remaining | type == "number") and
+              (.blocked | type == "array") and
+              (.unfixable | type == "array")
+            ' >/dev/null <<<"$result_json"; then
+              echo "::error::Bun Audit fix returned invalid JSON (exit $apply_status)."
+              exit 1
+            fi
+
+            applied="$(jq -r '.fixed' <<<"$result_json")"
+          fi
+
+          remaining="$(jq -r '.remaining' <<<"$result_json")"
+          blocked="$(jq -r '.blocked | length' <<<"$result_json")"
+          unfixable="$(jq -r '.unfixable | length' <<<"$result_json")"
+
+          {
+            echo "planned=$planned"
+            echo "applied=$applied"
+            echo "remaining=$remaining"
+            echo "blocked=$blocked"
+            echo "unfixable=$unfixable"
+          } >>"$GITHUB_OUTPUT"
+
+          {
+            echo "## Bun Audit"
+            echo
+            echo "| Result | Count |"
+            echo "| --- | ---: |"
+            echo "| Fixes planned | $planned |"
+            echo "| Fixes applied | $applied |"
+            echo "| Vulnerabilities remaining | $remaining |"
+            echo "| Blocked fixes | $blocked |"
+            echo "| Unfixable advisories | $unfixable |"
+          } >>"$GITHUB_STEP_SUMMARY"
+
+          if (( remaining > 0 )); then
+            echo "::warning::Bun Audit reports $remaining unresolved vulnerabilities."
+          fi
+
+      - name: Reject unexpected changes
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          unexpected_files=()
+          while IFS= read -r file; do
+            [[ -z "$file" ]] && continue
+            case "$file" in
+              package.json | bun.lock) ;;
+              *) unexpected_files+=("$file") ;;
+            esac
+          done < <(
+            {
+              git diff --name-only
+              git diff --cached --name-only
+              git ls-files --others --exclude-standard
+            } | sort -u
+          )
+
+          if (( ${#unexpected_files[@]} > 0 )); then
+            printf '::error::Unexpected file changed: %s\n' "${unexpected_files[@]}"
+            exit 1
+          fi
+
+      # Fail fast here so a broken update never opens a PR. CI runs these again
+      # on the PR branch to satisfy the required check.
+      - name: Lint
+        run: bun run lint
+
+      - name: Format check
+        run: bun run fmt:check
+
+      - name: Typecheck
+        run: bun run typecheck
+
+      - name: Test
+        run: bun run test
+
+      - name: Build
+        run: bun run build
+        env:
+          VARLOCK_ENV: test
+
+      - name: Create or update the dependency pull request
+        id: pr
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
+        with:
+          base: ${{ github.event.repository.default_branch }}
+          branch: automation/dependency-maintenance
+          delete-branch: true
+          reviewers: C41M50N
+          add-paths: |
+            package.json
+            bun.lock
+          commit-message: 'chore(deps): update dependencies'
+          title: 'chore(deps): update dependencies'
+          body: |
+            Applies routine dependency updates within the declared version ranges,
+            followed by available Bun Audit fixes.
+
+            ### Bun Audit
+
+            | Result | Count |
+            | --- | ---: |
+            | Fixes planned | ${{ steps.audit.outputs.planned }} |
+            | Fixes applied | ${{ steps.audit.outputs.applied }} |
+            | Vulnerabilities remaining | ${{ steps.audit.outputs.remaining }} |
+            | Blocked fixes | ${{ steps.audit.outputs.blocked }} |
+            | Unfixable advisories | ${{ steps.audit.outputs.unfixable }} |
+
+            Unresolved advisories are reported for review and do not fail this workflow.
+
+            [View the workflow run](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+
+      # Pushes made with GITHUB_TOKEN don't trigger workflows, so CI wouldn't
+      # report on the PR. workflow_dispatch is the documented exception.
+      - name: Run CI on the dependency branch
+        if: steps.pr.outputs.pull-request-operation == 'created' || steps.pr.outputs.pull-request-operation == 'updated'
+        run: gh workflow run ci.yml --ref automation/dependency-maintenance
+        env:
+          GH_TOKEN: ${{ github.token }}
