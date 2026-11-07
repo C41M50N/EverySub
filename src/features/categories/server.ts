@@ -4,22 +4,9 @@ import { dedupeCategoryNames, toCategoryNameKey } from '@/features/categories/na
 import { getMyCollection } from '@/features/collections/server';
 import { db, type DbTransaction } from '@/lib/db';
 import { CATEGORY_NAME_UNIQUE_CONSTRAINT, categoryTable } from '@/lib/db/category-schema';
+import { isUniqueViolation } from '@/lib/db/errors';
 
 export type Category = typeof categoryTable.$inferSelect;
-
-// Postgres error code for a unique-constraint violation.
-const PG_UNIQUE_VIOLATION = '23505';
-
-/** True when an error is the "category name already taken in this collection" conflict. */
-function isDuplicateCategoryNameError(error: unknown): boolean {
-  return (
-    typeof error === 'object' &&
-    error !== null &&
-    'code' in error &&
-    (error as { code?: unknown }).code === PG_UNIQUE_VIOLATION &&
-    (error as { constraint?: unknown }).constraint === CATEGORY_NAME_UNIQUE_CONSTRAINT
-  );
-}
 
 async function assertCollectionOwnership(userId: string, collectionId: string) {
   const collection = await getMyCollection(userId, collectionId);
@@ -79,7 +66,7 @@ export async function createMyCategory(input: { userId: string; collectionId: st
     return category;
   } catch (error) {
     // A concurrent insert may have won the race; return the existing row.
-    if (isDuplicateCategoryNameError(error)) {
+    if (isUniqueViolation(error, CATEGORY_NAME_UNIQUE_CONSTRAINT)) {
       const [existingAfterRace] = await findExisting();
 
       if (existingAfterRace) {
