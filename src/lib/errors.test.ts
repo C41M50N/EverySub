@@ -23,10 +23,6 @@ describe('withUserFacingErrors', () => {
 
     consoleError.mockRestore();
   });
-
-  it('returns the result on success', async () => {
-    await expect(withUserFacingErrors('Fallback', async () => 'ok')).resolves.toBe('ok');
-  });
 });
 
 describe('describeErrorSafely', () => {

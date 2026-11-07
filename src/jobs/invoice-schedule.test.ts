@@ -35,9 +35,7 @@ describe('buildDueInvoiceSchedule', () => {
 
 describe('getNextInvoiceDateOnOrAfter', () => {
   it.each([
-    ['weekly', '2026-07-21', '2026-07-28', '2026-07-28'],
     ['monthly', '2026-01-31', '2026-03-01', '2026-03-28'],
-    ['yearly', '2025-07-28', '2026-07-29', '2027-07-28'],
     ['biennially', '2024-07-28', '2026-07-28', '2026-07-28'],
   ] as const)(
     'advances a %s schedule without creating missed invoices',

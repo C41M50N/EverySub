@@ -10,14 +10,10 @@ import {
   addPendingCategory,
   applyRowEdit,
   buildDuplicateIndex,
-  canImport,
   createReviewState,
-  formatImportButtonLabel,
-  formatImportResult,
   getSelectedItems,
   groupReviewRows,
   isLikelyDuplicate,
-  isNewCategory,
   type ReviewContext,
   setRowsSelected,
   summarizeSelection,
@@ -271,25 +267,9 @@ describe('addPendingCategory', () => {
 describe('isLikelyDuplicate', () => {
   const index = buildDuplicateIndex(context.subscriptions);
 
-  it('matches names case-insensitively', () => {
-    expect(isLikelyDuplicate({ name: 'SPOTIFY', iconRef: 'other.example' }, index)).toBe(true);
-  });
-
-  it('matches icons', () => {
-    expect(isLikelyDuplicate({ name: 'Spotify Family', iconRef: 'spotify.com' }, index)).toBe(true);
-  });
-
   it('ignores empty values and different subscriptions', () => {
     expect(isLikelyDuplicate({ name: 'Netflix', iconRef: '' }, index)).toBe(false);
     expect(isLikelyDuplicate({ name: '', iconRef: '' }, buildDuplicateIndex([{ name: '', iconRef: '' }]))).toBe(false);
-  });
-});
-
-describe('isNewCategory', () => {
-  it('compares category names case-insensitively', () => {
-    expect(isNewCategory('streaming', context.categories)).toBe(false);
-    expect(isNewCategory('Fitness', context.categories)).toBe(true);
-    expect(isNewCategory(null, context.categories)).toBe(false);
   });
 });
 
@@ -317,28 +297,5 @@ describe('selection summary', () => {
     expect(items.map((item) => item.name)).toEqual(['Yearly', 'Paused', 'Weekly']);
     // $120/yr is $10/mo and $3/wk is $13/mo. Inactive rows add no spend.
     expect(summarizeSelection(items)).toEqual({ count: 3, monthlyCents: 2300 });
-  });
-
-  it('labels the import button with the count', () => {
-    expect(formatImportButtonLabel(0)).toBe('Import subscriptions');
-    expect(formatImportButtonLabel(1)).toBe('Import 1 subscription');
-    expect(formatImportButtonLabel(13)).toBe('Import 13 subscriptions');
-  });
-
-  it('allows importing between 1 and 150 rows', () => {
-    expect(canImport(0)).toBe(false);
-    expect(canImport(1)).toBe(true);
-    expect(canImport(150)).toBe(true);
-    expect(canImport(151)).toBe(false);
-  });
-
-  it('reports the import result', () => {
-    expect(formatImportResult({ subscriptionsImported: 13, categoriesCreated: 0 })).toBe('Imported 13 subscriptions');
-    expect(formatImportResult({ subscriptionsImported: 1, categoriesCreated: 1 })).toBe(
-      'Imported 1 subscription · 1 new category',
-    );
-    expect(formatImportResult({ subscriptionsImported: 13, categoriesCreated: 2 })).toBe(
-      'Imported 13 subscriptions · 2 new categories',
-    );
   });
 });

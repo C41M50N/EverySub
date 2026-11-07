@@ -13,7 +13,7 @@ export type CollectionInvoiceRange = {
   endDate: string;
 };
 
-export function collectionInvoicesQueryKey(input: CollectionInvoiceRange) {
+function collectionInvoicesQueryKey(input: CollectionInvoiceRange) {
   return ['invoices', 'by-collection', input.collectionId, input.startDate, input.endDate] as const;
 }
 
