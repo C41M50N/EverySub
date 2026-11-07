@@ -5,24 +5,11 @@ import { LAST_COLLECTION_DELETE_MESSAGE } from '@/features/collections/schema';
 import { db, type DbTransaction } from '@/lib/db';
 import { categoryTable } from '@/lib/db/category-schema';
 import { COLLECTION_NAME_UNIQUE_CONSTRAINT, collectionTable } from '@/lib/db/collection-schema';
+import { isUniqueViolation } from '@/lib/db/errors';
 import { subscriptionTable } from '@/lib/db/subscription-schema';
 import { UserFacingError } from '@/lib/errors';
 
 export type Collection = typeof collectionTable.$inferSelect;
-
-// Postgres error code for a unique-constraint violation.
-const PG_UNIQUE_VIOLATION = '23505';
-
-/** True when an error is the "collection name already taken for this user" conflict. */
-function isDuplicateCollectionNameError(error: unknown): boolean {
-  return (
-    typeof error === 'object' &&
-    error !== null &&
-    'code' in error &&
-    (error as { code?: unknown }).code === PG_UNIQUE_VIOLATION &&
-    (error as { constraint?: unknown }).constraint === COLLECTION_NAME_UNIQUE_CONSTRAINT
-  );
-}
 
 const DUPLICATE_COLLECTION_NAME_MESSAGE = 'A collection with this name already exists';
 
@@ -89,7 +76,7 @@ export async function createMyCollection(input: { userId: string; name: string }
   try {
     return await db.transaction((tx) => insertCollection(tx, input));
   } catch (error) {
-    if (isDuplicateCollectionNameError(error)) {
+    if (isUniqueViolation(error, COLLECTION_NAME_UNIQUE_CONSTRAINT)) {
       throw new UserFacingError(DUPLICATE_COLLECTION_NAME_MESSAGE);
     }
 
@@ -109,7 +96,7 @@ export async function renameMyCollection(input: { userId: string; collectionId: 
       .where(getCollectionFilter(input.userId, input.collectionId))
       .returning();
   } catch (error) {
-    if (isDuplicateCollectionNameError(error)) {
+    if (isUniqueViolation(error, COLLECTION_NAME_UNIQUE_CONSTRAINT)) {
       throw new UserFacingError(DUPLICATE_COLLECTION_NAME_MESSAGE);
     }
 
@@ -195,6 +182,7 @@ export async function duplicateMyCollection(input: { userId: string; collectionI
           userId: subscription.userId,
           name: subscription.name,
           status: subscription.status,
+          deactivatedAt: subscription.deactivatedAt,
           iconRef: subscription.iconRef,
           categoryId: subscription.categoryId ? (newCategoryIdByOldId.get(subscription.categoryId) ?? null) : null,
           costAmount: subscription.costAmount,

@@ -167,12 +167,7 @@ it('keeps collection names unique per account, ignoring case', async () => {
   expect(await collectionNames(bob.userId)).toEqual(['Personal', 'work']);
 });
 
-// Bug: isDuplicateCollectionNameError (src/features/collections/server.ts:17)
-// reads `code` and `constraint` off the thrown error, but Drizzle wraps the pg
-// error in a DrizzleQueryError and puts it in `cause`. The check never
-// matches, so the user sees the generic failure toast instead of "A collection
-// with this name already exists". Expected: a UserFacingError with that message.
-it.fails('tells the user when a collection name is already taken', async () => {
+it('tells the user when a collection name is already taken', async () => {
   const alice = await seedAccount();
   const work = await createMyCollection({ userId: alice.userId, name: 'Work' });
 
@@ -239,12 +234,7 @@ it('duplicates a collection’s own categories and subscriptions into a new copy
   expect((await duplicateMyCollection({ userId, collectionId })).name).toBe('Personal (copy 2)');
 });
 
-// Bug: duplicateMyCollection copies `status` but not `deactivatedAt`
-// (src/features/collections/server.ts, the subscription insert in
-// duplicateMyCollection). The copy of an inactive subscription has
-// deactivatedAt null, so the Inactive view shows no deactivation date for it
-// and sorts it last. Expected: the copy keeps the original's deactivatedAt.
-it.fails('duplicates an inactive subscription with the time it was deactivated', async () => {
+it('duplicates an inactive subscription with the time it was deactivated', async () => {
   const alice = await seedAccount();
   const deactivatedAt = new Date('2026-09-30T12:00:00.000Z');
   const gym = await addSubscription({ ...alice, name: 'Gym' });
