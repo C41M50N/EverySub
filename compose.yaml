@@ -1,0 +1,19 @@
+# Postgres for the database tests (`bun run test:db`). The connection string
+# in .env.test matches this service. Data lives in memory and is gone when the
+# container stops, which is what a test database should do.
+services:
+  postgres:
+    image: postgres:18
+    environment:
+      POSTGRES_USER: everysub
+      POSTGRES_PASSWORD: everysub
+      POSTGRES_DB: everysub_test
+    ports:
+      - '5432:5432'
+    tmpfs:
+      - /var/lib/postgresql
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready --username everysub --dbname everysub_test']
+      interval: 2s
+      timeout: 5s
+      retries: 15

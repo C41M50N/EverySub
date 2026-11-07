@@ -9,3 +9,5 @@ Current project stage: Development. Data models are still evolving. No need to h
 # Development
 
 Don't run `db:generate` unless I explicitly tell you to.
+
+Follow [docs/testing.md](docs/testing.md) when writing or changing tests. Unit tests (`*.test.ts`) cover pure logic. Database tests (`*.db.test.ts`) cover server functions and jobs against a real Postgres started with `docker compose up --detach --wait`. Mock only external services, never the app's own modules.

@@ -69,7 +69,9 @@ Portless may ask for your system password because the HTTPS proxy uses port 443.
 | `bun run dev`              | Start the local HTTPS app                  |
 | `bun run build`            | Build the production app                   |
 | `bun run start`            | Serve the production build                 |
-| `bun run test`             | Run Vitest tests                           |
+| `bun run test`             | Run all tests (see Tests below)            |
+| `bun run test:unit`        | Run unit tests only                        |
+| `bun run test:db`          | Run database tests against local Postgres  |
 | `bun run lint`             | Run Oxlint                                 |
 | `bun run fmt:check`        | Check formatting with Oxfmt                |
 | `bun run db:migrate`       | Apply existing Drizzle migrations          |
@@ -96,7 +98,14 @@ Until all three are set, email is shown as unavailable and Discord and webhook d
 
 ## Tests
 
-`bun run test` runs the unit tests. There are no database-backed tests yet, so notification event claiming and row locking, persistence across job reruns, and concurrent job runs have no automated coverage. That stays open until the project has a managed test database with migrations applied in CI.
+Unit tests cover pure logic and need nothing running. Database tests cover the server functions and scheduled jobs against a real Postgres, started with Docker:
+
+```bash
+docker compose up --detach --wait
+bun run test
+```
+
+CI runs both kinds on every push. [`docs/testing.md`](docs/testing.md) explains what belongs at each layer and the rules tests follow.
 
 ## Deployment
 

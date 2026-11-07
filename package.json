@@ -15,6 +15,8 @@
     "typecheck": "varlock typegen && tsc --noEmit",
     "preview": "vite preview",
     "test": "VARLOCK_ENV=test vitest run",
+    "test:unit": "VARLOCK_ENV=test vitest run --project unit",
+    "test:db": "VARLOCK_ENV=test vitest run --project db",
     "invoices:process": "varlock run -- bun src/jobs/process-due-invoices.ts",
     "jobs:run": "varlock run -- bun src/jobs/run-scheduled-jobs.ts",
     "email:dev": "email dev --dir src/features/notifications/email/previews --port 3030",
