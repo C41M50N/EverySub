@@ -26,7 +26,7 @@ railway config plan
 railway config apply --yes
 ```
 
-IaC is applied by the CLI; Railway does not evaluate `.railway/railway.ts` when GitHub source deployments run. Apply infrastructure changes to both environments when editing this file. Git pushes to `main` deploy application code to production.
+IaC is applied by the CLI; Railway does not evaluate `.railway/railway.ts` when GitHub source deployments run. Apply infrastructure changes to both environments when editing this file. Git pushes to `main` deploy application code to production once GitHub CI passes for that commit.
 
 The definition manages the whole environment. Removing a resource can delete it. Keep the imported development volume declared, inspect destruction lines, and do not use `--confirm-destructive` for a routine deployment. Generated Railway domains and database provisioning details are retained by the platform.
 
