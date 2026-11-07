@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  push:
+    branches: ['**']
+  # Also dispatched by dependency maintenance, whose GITHUB_TOKEN pushes don't trigger `push`.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup
+        uses: ./.github/setup
+
+      - name: Lint
+        run: bun run lint
+
+      - name: Format check
+        run: bun run fmt:check
+
+      - name: Typecheck
+        run: bun run typecheck
+
+      - name: Test
+        run: bun run test
+
+      # Varlock blocks the build until required config is set. The committed
+      # .env.test supplies placeholder values; this build is never deployed.
+      - name: Build
+        run: bun run build
+        env:
+          VARLOCK_ENV: test
