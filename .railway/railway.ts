@@ -48,7 +48,8 @@ export default defineRailway((ctx) => {
     RESEND_FROM_ADDRESS: ctx.shared.RESEND_FROM_ADDRESS,
     RESEND_WEBHOOK_SECRET: ctx.shared.RESEND_WEBHOOK_SECRET,
   };
-  const source = github('C41M50N/EverySub', { branch: 'main' });
+  // Wait for GitHub CI to pass before deploying a commit.
+  const source = github('C41M50N/EverySub', { branch: 'main', checkSuites: true });
   const build = { builder: 'RAILPACK' as const, buildCommand: 'bun run build' };
   const replicas = { [region]: 1 };
 
