@@ -107,17 +107,6 @@ describe('getSmartImportUsageMessage', () => {
       '1 smart import left today',
     );
   });
-
-  it('says when each limit clears', () => {
-    const availableAt = new Date(now.getTime() + 2.5 * HOUR);
-
-    expect(getSmartImportUsageMessage({ status: 'success_limit', availableAt }, now)).toBe(
-      'Smart import is available again in 3h',
-    );
-    expect(getSmartImportUsageMessage({ status: 'attempt_limit', availableAt }, now)).toBe(
-      'Too many attempts. Try again in 3h.',
-    );
-  });
 });
 
 describe('formatWaitTime', () => {

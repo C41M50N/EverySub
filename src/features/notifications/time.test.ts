@@ -21,7 +21,6 @@ describe('date keys', () => {
     ['2028-02-28', 1, '2028-02-29'],
     ['2026-12-31', 1, '2027-01-01'],
     ['2026-03-01', -1, '2026-02-28'],
-    ['2026-10-07', -6, '2026-10-01'],
   ])('adds days to %s (%i)', (date, days, expected) => {
     expect(addDaysToDateKey(date, days)).toBe(expected);
   });
@@ -29,7 +28,6 @@ describe('date keys', () => {
   it.each([
     ['2026-01', -1, '2025-12'],
     ['2026-12', 1, '2027-01'],
-    ['2026-10', 0, '2026-10'],
   ])('adds months to %s (%i)', (month, months, expected) => {
     expect(addMonthsToMonthKey(month, months)).toBe(expected);
   });

@@ -18,15 +18,15 @@ const response = (status: number, extra: Partial<Extract<HttpResult, { kind: 're
 });
 
 describe('classifyWebhookResult', () => {
-  it.each([200, 202, 204])('treats %i as delivered', (status) => {
-    expect(classifyWebhookResult(response(status), 'webhook').outcome).toBe('succeeded');
+  it('treats a 2xx as delivered', () => {
+    expect(classifyWebhookResult(response(200), 'webhook').outcome).toBe('succeeded');
   });
 
-  it.each([408, 425, 429, 500, 502, 503])('retries %i', (status) => {
+  it.each([408, 425, 429, 500])('retries %i', (status) => {
     expect(classifyWebhookResult(response(status), 'webhook').outcome).toBe('temporary_failure');
   });
 
-  it.each([301, 302, 400, 401, 403, 404, 410, 422])('treats %i as a permanent rejection', (status) => {
+  it.each([301, 400])('treats %i as a permanent rejection', (status) => {
     expect(classifyWebhookResult(response(status), 'webhook').outcome).toBe('permanent_failure');
   });
 

@@ -4,12 +4,9 @@ import {
   advanceInvoiceDate,
   compareRecordedInvoices,
   getDefaultSelectedDate,
-  getMonthRange,
   getProjectionRange,
-  groupInvoicesByDate,
   invoicesInRollingWindow,
   projectInvoices,
-  summarizeInvoices,
   toRecordedInvoices,
   type ProjectionInput,
   type RecordedInvoice,
@@ -93,19 +90,8 @@ describe('recorded invoices and aggregation', () => {
     },
   ]);
 
-  it('retains snapshot values and an explicit recorded discriminator', () => {
-    expect(recorded[1]).toMatchObject({
-      kind: 'recorded',
-      subscriptionId: null,
-      name: 'Archived service',
-      category: 'Former category',
-    });
-  });
-
-  it('sorts and aggregates recorded invoices deterministically', () => {
+  it('sorts same-day recorded invoices by amount descending', () => {
     expect([...recorded].sort(compareRecordedInvoices).map((invoice) => invoice.id)).toEqual(['large', 'small']);
-    expect(summarizeInvoices(recorded)).toEqual({ count: 2, totalCents: 3000 });
-    expect(groupInvoicesByDate(recorded).get('2026-02-10')).toHaveLength(2);
   });
 
   it('uses today, the earliest invoice, then the first of the month for selection', () => {
@@ -119,10 +105,6 @@ describe('recorded invoices and aggregation', () => {
 });
 
 describe('date ranges', () => {
-  it('builds inclusive-start, exclusive-end month boundaries', () => {
-    expect(getMonthRange('2028-02')).toEqual({ startDate: '2028-02-01', endDate: '2028-03-01' });
-  });
-
   it('limits rolling summaries to the configured date window', () => {
     const invoices = projectInvoices([subscription({ costFrequency: 'weekly', nextInvoiceDate: '2026-01-01' })], {
       startDate: '2026-01-01',

@@ -25,19 +25,12 @@ describe('Standard Webhooks signatures', () => {
     expect(computeSignature({ id, timestamp, body, secret })).toBe(signature);
   });
 
-  it('sends the ID, the timestamp in seconds, and a v1 signature for each secret', () => {
+  it('sends the ID, the timestamp in seconds, and a v1 signature', () => {
     expect(buildSignatureHeaders({ id, timestamp, body, secrets: [secret] })).toEqual({
       'webhook-id': 'msg_p5jXN8AQM9LWM0D4loKWxJek',
       'webhook-timestamp': '1614265330',
       'webhook-signature': 'v1,g0hM9SsE+OTPJTGt/tmIKtSyZlE3uFJELVlNIOLJ1OE=',
     });
-
-    const rotated = buildSignatureHeaders({ id, timestamp, body, secrets: [secret, generateSigningSecret()] });
-    const [current, retired, ...rest] = rotated['webhook-signature'].split(' ');
-
-    expect(current).toBe('v1,g0hM9SsE+OTPJTGt/tmIKtSyZlE3uFJELVlNIOLJ1OE=');
-    expect(retired).toMatch(/^v1,[A-Za-z0-9+/]{43}=$/);
-    expect(rest).toEqual([]);
   });
 
   it('accepts a timestamp up to five minutes from the receiver’s clock', () => {

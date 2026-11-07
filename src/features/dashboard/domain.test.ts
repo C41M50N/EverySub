@@ -3,10 +3,8 @@ import { describe, expect, it } from 'vitest';
 import {
   buildCategoryBreakdown,
   buildSpendTrend,
-  countCategories,
   foldCategoryShares,
   getRecordedTrendRange,
-  invoicesInCurrentMonth,
 } from '@/features/dashboard/domain';
 import type { ProjectedInvoice, RecordedInvoice } from '@/features/invoices/domain';
 
@@ -48,22 +46,16 @@ describe('getRecordedTrendRange', () => {
 });
 
 describe('buildSpendTrend', () => {
-  it('emits one zero-filled point per month across the window', () => {
+  it('emits one zero-filled point per month, marking past, current, and future', () => {
     const points = buildSpendTrend([], [], now);
 
     expect(points).toHaveLength(13);
-    expect(points[0].monthKey).toBe('2026-03');
-    expect(points[6].monthKey).toBe('2026-09');
-    expect(points[12].monthKey).toBe('2027-03');
+    expect(points[0]).toMatchObject({ monthKey: '2026-03', status: 'past' });
+    expect(points[5]).toMatchObject({ monthKey: '2026-08', status: 'past' });
+    expect(points[6]).toMatchObject({ monthKey: '2026-09', status: 'current' });
+    expect(points[7]).toMatchObject({ monthKey: '2026-10', status: 'future' });
+    expect(points[12]).toMatchObject({ monthKey: '2027-03', status: 'future' });
     expect(points.every((point) => point.recordedCents === 0 && point.projectedCents === 0)).toBe(true);
-  });
-
-  it('marks past, current, and future months', () => {
-    const statuses = buildSpendTrend([], [], now).map((point) => point.status);
-
-    expect(statuses.slice(0, 6).every((status) => status === 'past')).toBe(true);
-    expect(statuses[6]).toBe('current');
-    expect(statuses.slice(7).every((status) => status === 'future')).toBe(true);
   });
 
   it('labels the first bar and January with a year', () => {
@@ -213,19 +205,5 @@ describe('foldCategoryShares', () => {
     const slices = foldCategoryShares([share('Free', 0, 0), share('Also free', 0, 0)]);
 
     expect(slices.map((slice) => slice.category)).toEqual(['Free', 'Also free']);
-  });
-});
-
-describe('countCategories', () => {
-  it('counts distinct named categories only', () => {
-    expect(countCategories([{ category: 'A' }, { category: 'A' }, { category: 'B' }, { category: null }])).toBe(2);
-  });
-});
-
-describe('invoicesInCurrentMonth', () => {
-  it('keeps only invoices dated in the month of now', () => {
-    const invoices = [recorded({ id: 'in', date: '2026-09-30' }), recorded({ id: 'out', date: '2026-08-31' })];
-
-    expect(invoicesInCurrentMonth(invoices, now).map((invoice) => invoice.id)).toEqual(['in']);
   });
 });
