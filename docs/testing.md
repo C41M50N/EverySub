@@ -2,14 +2,15 @@
 
 Tests exist to catch bugs a user would notice. Each one should answer, in a sentence, what would ship broken without it. If the honest answer is "a type error", "the mock was called", or "the component rendered", the test costs more than it returns and should not be written.
 
-Two kinds of tests run today, told apart by filename. A third, browser tests, is planned and described at the end.
+Three kinds of tests run, told apart by where they live and what they are named.
 
-| Kind     | Files                     | Needs    | Runs with           | What it proves                                                                                      |
-| -------- | ------------------------- | -------- | ------------------- | --------------------------------------------------------------------------------------------------- |
-| Unit     | `*.test.ts`, `*.test.tsx` | Nothing  | `bun run test:unit` | Pure logic: dates, money, schedules, parsing, signing, rendered email text                          |
-| Database | `*.db.test.ts`            | Postgres | `bun run test:db`   | Server functions and jobs against real tables: ownership, transactions, concurrency, the SQL itself |
+| Kind     | Files                     | Needs              | Runs with           | What it proves                                                                                              |
+| -------- | ------------------------- | ------------------ | ------------------- | ----------------------------------------------------------------------------------------------------------- |
+| Unit     | `*.test.ts`, `*.test.tsx` | Nothing            | `bun run test:unit` | Pure logic: dates, money, schedules, parsing, signing, rendered email text                                  |
+| Database | `*.db.test.ts`            | Postgres           | `bun run test:db`   | Server functions and jobs against real tables: ownership, transactions, concurrency, the SQL itself         |
+| Browser  | `e2e/*.spec.ts`           | Postgres, Chromium | `bun run test:e2e`  | Whole journeys in a real browser: route loaders to queries to components to mutations to cache invalidation |
 
-`bun run test` runs both. CI runs both on every push.
+`bun run test` runs the first two; browser tests run on their own. CI runs the first two on every push and the browser tests on pull requests and `main`.
 
 ## What goes where
 
@@ -72,8 +73,10 @@ Keep scenario-specific helpers in the test file that uses them. Promote a helper
 
 ## Browser tests
 
-Not built yet. When they are, they use Playwright and cover only what the layers above cannot see: route loaders to queries to components to mutations to cache invalidation. Five journeys or fewer, such as first-run onboarding, adding a subscription and seeing it on the table and dashboard, the import review flow, and the unauthenticated redirect to `/login`. No visual assertions.
+Browser tests use Playwright and cover only what the layers above cannot see: route loaders to queries to components to mutations to cache invalidation. They stay at five journeys or fewer: the signed-out redirect to `/login` and the signed-in redirect back, first-run onboarding, adding a subscription and seeing it on the table and dashboard, and the import review flow. No visual assertions. Their cost is not minutes but flake and upkeep, which is why the suite stays small.
 
-Google is the only sign-in provider, so the suite will sign in by inserting a user and session row through Better Auth's adapter and setting the signed session cookie on the browser context from Playwright's global setup. Production code gets no test-only path.
+They run against the production build. `bun run test:e2e` builds the app, serves it on port 3000 (the `BETTER_AUTH_URL` in `.env.test`) against the same Postgres as the database tests, and stops it afterwards. Install Chromium once with `bunx playwright install chromium`. A failed test keeps a trace under `test-results/`; open it with `bunx playwright show-trace <path>`.
 
-Browser tests run as a separate CI job on pull requests and `main`, so the lint, typecheck, and test job stays fast. Their cost is not minutes but flake and upkeep, which is why the suite stays small.
+Google is the only sign-in provider, so the fixtures in `e2e/fixtures.ts` sign in without it. `signInAsNewUser()` and `signInAsAccount()` seed a user with the helpers in `src/test/db.ts`, insert a session row, and set the signed session cookie on the browser context, the same cookie Better Auth sets after a Google sign-in. Production code gets no test-only path. Every test seeds its own user and nothing is truncated, so tests run in parallel and leftovers from other runs don't matter.
+
+Browser tests run as a separate CI job on pull requests and `main`, so the lint, typecheck, and test job stays fast.
