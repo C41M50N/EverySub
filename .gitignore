@@ -15,3 +15,7 @@ todos.json
 
 # Real statements for smart import evaluation. Never commit these.
 fixtures/private/
+
+# Playwright output
+test-results
+playwright-report

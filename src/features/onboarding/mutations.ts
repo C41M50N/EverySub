@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
-import { collectionsListQueryKey } from '@/features/collections/queries';
+import { collectionsQueryOptions } from '@/features/collections/queries';
 import { markReminderInvitationShown, setUpAccount } from '@/features/onboarding/api';
 import { onboardingQueryKey, type OnboardingData } from '@/features/onboarding/queries';
 import { track } from '@/lib/analytics';
@@ -10,15 +10,14 @@ export function useSetUpAccount() {
 
   return useMutation({
     mutationFn: (timeZone: string | undefined) => setUpAccount({ data: { timeZone } }),
-    // The collection routes read the cached list, which is still empty and
-    // unobserved here, so it has to refetch before navigating.
-    onSuccess: () => {
+    // The collection routes read the cached list, which is still empty here.
+    // It was hydrated from the server without a query function, so
+    // invalidating it couldn't refetch; fetch it outright before navigating.
+    onSuccess: async () => {
       track('account_set_up');
 
-      return Promise.all([
-        queryClient.invalidateQueries({ queryKey: collectionsListQueryKey, refetchType: 'all' }),
-        queryClient.invalidateQueries({ queryKey: onboardingQueryKey }),
-      ]);
+      await queryClient.fetchQuery({ ...collectionsQueryOptions(), staleTime: 0 });
+      void queryClient.invalidateQueries({ queryKey: onboardingQueryKey });
     },
   });
 }

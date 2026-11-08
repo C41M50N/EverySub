@@ -17,6 +17,7 @@
     "test": "VARLOCK_ENV=test vitest run",
     "test:unit": "VARLOCK_ENV=test vitest run --project unit",
     "test:db": "VARLOCK_ENV=test vitest run --project db",
+    "test:e2e": "VARLOCK_ENV=test varlock run -- playwright test",
     "invoices:process": "varlock run -- bun src/jobs/process-due-invoices.ts",
     "jobs:run": "varlock run -- bun src/jobs/run-scheduled-jobs.ts",
     "email:dev": "email dev --dir src/features/notifications/email/previews --port 3030",
@@ -71,6 +72,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@playwright/test": "^1.64.1",
     "@react-email/ui": "6.11.0",
     "@tailwindcss/typography": "^0.5.20",
     "@tanstack/devtools-vite": "^0.8.5",
