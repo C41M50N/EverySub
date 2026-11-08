@@ -17,10 +17,11 @@ test('a new subscription shows up on the table and in the dashboard totals', asy
   await page.getByPlaceholder('Search brands or enter a domain').fill('notion.so');
   await page.getByRole('button', { name: 'Use “notion.so”' }).click();
   await dialog.getByLabel('Name', { exact: true }).fill('Notion');
-  // Typing narrows the list to the one match, so Enter picks it.
+  // Typed key by key, as the combobox filters on each keystroke and highlights
+  // the one match. Enter before the highlight would submit the form instead.
   const category = dialog.getByLabel('Category');
-  await category.fill('Productivity');
-  await expect(page.getByRole('option', { name: 'Productivity' })).toBeVisible();
+  await category.pressSequentially('Productivity');
+  await expect(page.locator('[role="option"][data-highlighted]')).toHaveText('Productivity');
   await category.press('Enter');
   await expect(category).toHaveValue('Productivity');
   await dialog.getByLabel('Cost').fill('8');
