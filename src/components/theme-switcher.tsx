@@ -1,3 +1,4 @@
+import { useHydrated } from '@tanstack/react-router';
 import {
   ChevronsUpDownIcon,
   MonitorIcon,
@@ -5,7 +6,6 @@ import {
   SunIcon,
 } from 'lucide-react';
 import { useTheme } from 'next-themes';
-import { useEffect, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -24,18 +24,14 @@ const themeOptions = [
 
 export function ThemeSwitcher() {
   const { theme, setTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
-
   // Theme is only known on the client; render a stable placeholder until
-  // mounted to avoid a hydration mismatch.
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  // hydrated to avoid a hydration mismatch.
+  const hydrated = useHydrated();
 
   const activeOption =
     themeOptions.find((option) => option.value === theme) ?? themeOptions[2];
-  const ActiveIcon = mounted ? activeOption.icon : MonitorIcon;
-  const activeLabel = mounted ? activeOption.label : 'Theme';
+  const ActiveIcon = hydrated ? activeOption.icon : MonitorIcon;
+  const activeLabel = hydrated ? activeOption.label : 'Theme';
 
   return (
     <DropdownMenu>

@@ -25,6 +25,7 @@ export function useCountUp(target: number, enabled: boolean): number {
 
     if (!enabled || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
       valueRef.current = target;
+      // oxlint-disable-next-line react/set-state-in-effect -- Skips the animation; the reduced-motion check needs the browser.
       setValue(target);
       return;
     }

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 import {
   buildLogoImageUrl,
@@ -29,13 +29,9 @@ export function SubscriptionIcon({
 }: SubscriptionIconProps) {
   const styles = sizeStyles[size];
   const src = buildLogoImageUrl(domain, styles.px);
-  const [failed, setFailed] = useState(false);
-
-  useEffect(() => {
-    setFailed(false);
-  }, [src]);
-
-  const showImage = src !== null && !failed;
+  // Remembers which URL failed, so a new domain or size gets a fresh attempt.
+  const [failedSrc, setFailedSrc] = useState<string | null>(null);
+  const showImage = src !== null && src !== failedSrc;
 
   return (
     <span
@@ -56,7 +52,7 @@ export function SubscriptionIcon({
           alt=""
           className="size-full object-contain"
           loading="lazy"
-          onError={() => setFailed(true)}
+          onError={() => setFailedSrc(src)}
         />
       ) : (
         <span aria-hidden>{initialsFromName(name)}</span>
