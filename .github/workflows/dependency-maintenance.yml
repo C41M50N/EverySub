@@ -6,10 +6,10 @@ on:
     - cron: '0 3 1 * *'
       timezone: America/Detroit
 
-permissions:
-  actions: write # dispatch CI on the dependency branch
-  contents: write
-  pull-requests: write
+# Each job asks for what it needs. The update job runs freshly updated
+# dependency code (install, taze, tests, build) with read-only access; only the
+# pull-request job can push, and it runs none of that code.
+permissions: {}
 
 concurrency:
   group: dependency-maintenance
@@ -19,12 +19,23 @@ jobs:
   update:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    permissions:
+      contents: read
+    outputs:
+      base: ${{ steps.save.outputs.base }}
+      changed: ${{ steps.save.outputs.changed }}
+      planned: ${{ steps.audit.outputs.planned }}
+      applied: ${{ steps.audit.outputs.applied }}
+      remaining: ${{ steps.audit.outputs.remaining }}
+      blocked: ${{ steps.audit.outputs.blocked }}
+      unfixable: ${{ steps.audit.outputs.unfixable }}
 
     steps:
       - name: Check out the default branch
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.event.repository.default_branch }}
+          persist-credentials: false
 
       - name: Setup
         uses: ./.github/setup
@@ -157,6 +168,53 @@ jobs:
         env:
           VARLOCK_ENV: test
 
+      - name: Save the update
+        id: save
+        run: |
+          git diff --binary -- package.json bun.lock >"$RUNNER_TEMP/dependencies.patch"
+          echo "base=$(git rev-parse HEAD)" >>"$GITHUB_OUTPUT"
+          if [[ -s "$RUNNER_TEMP/dependencies.patch" ]]; then
+            echo "changed=true" >>"$GITHUB_OUTPUT"
+          else
+            echo "changed=false" >>"$GITHUB_OUTPUT"
+          fi
+
+      - name: Upload the update
+        if: steps.save.outputs.changed == 'true'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: dependency-update
+          path: ${{ runner.temp }}/dependencies.patch
+          retention-days: 1
+
+  pull-request:
+    needs: update
+    if: needs.update.outputs.changed == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      actions: write # dispatch CI on the dependency branch
+      contents: write
+      pull-requests: write
+
+    steps:
+      # The exact commit the update was made against, so the patch applies
+      # even if main moved meanwhile. The PR targets main either way.
+      - name: Check out the updated commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.update.outputs.base }}
+          persist-credentials: false
+
+      - name: Download the update
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: dependency-update
+          path: ${{ runner.temp }}
+
+      - name: Apply the update
+        run: git apply "$RUNNER_TEMP/dependencies.patch"
+
       - name: Create or update the dependency pull request
         id: pr
         uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
@@ -178,11 +236,11 @@ jobs:
 
             | Result | Count |
             | --- | ---: |
-            | Fixes planned | ${{ steps.audit.outputs.planned }} |
-            | Fixes applied | ${{ steps.audit.outputs.applied }} |
-            | Vulnerabilities remaining | ${{ steps.audit.outputs.remaining }} |
-            | Blocked fixes | ${{ steps.audit.outputs.blocked }} |
-            | Unfixable advisories | ${{ steps.audit.outputs.unfixable }} |
+            | Fixes planned | ${{ needs.update.outputs.planned }} |
+            | Fixes applied | ${{ needs.update.outputs.applied }} |
+            | Vulnerabilities remaining | ${{ needs.update.outputs.remaining }} |
+            | Blocked fixes | ${{ needs.update.outputs.blocked }} |
+            | Unfixable advisories | ${{ needs.update.outputs.unfixable }} |
 
             Unresolved advisories are reported for review and do not fail this workflow.
 
