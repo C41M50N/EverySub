@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 
 import {
   Combobox,
@@ -54,8 +54,9 @@ export function TimeZoneCombobox({
   disabled,
   invalid,
 }: TimeZoneComboboxProps) {
+  // Offsets are labeled as of when the picker mounts.
+  const [now] = useState(() => new Date());
   const options = useMemo(() => {
-    const now = new Date();
     const zones = listTimeZones();
 
     // The saved zone may be a valid alias the runtime doesn't list, like UTC.
@@ -64,7 +65,7 @@ export function TimeZoneCombobox({
     }
 
     return zones.map((zone) => toOption(zone, now));
-  }, [value]);
+  }, [value, now]);
 
   const selected = options.find((option) => option.value === value) ?? null;
 

@@ -5,7 +5,9 @@
     "correctness": "error"
   },
   "ignorePatterns": ["tsconfig.json", "src/routeTree.gen.ts", "drizzle/meta/**"],
-  "rules": {},
+  "rules": {
+    "react/incompatible-library": "off"
+  },
   "env": {
     "builtin": true
   }

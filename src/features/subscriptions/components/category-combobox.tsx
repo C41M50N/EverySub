@@ -1,5 +1,5 @@
 import { PlusIcon } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import {
   Combobox,
@@ -40,16 +40,20 @@ export function CategoryCombobox({
   );
 
   const [query, setQuery] = useState(selectedName);
+  const [synced, setSynced] = useState({ value, selectedName });
 
-  // Keep the input text in sync with the selected category. When a freshly
-  // created category isn't in the list yet, leave the typed text untouched.
-  useEffect(() => {
+  // Keep the input text in sync with the selected category, adjusting during
+  // render so the input never shows a stale name. When a freshly created
+  // category isn't in the list yet, leave the typed text untouched.
+  if (synced.value !== value || synced.selectedName !== selectedName) {
+    setSynced({ value, selectedName });
+
     if (value === null) {
       setQuery('');
     } else if (selectedName) {
       setQuery(selectedName);
     }
-  }, [value, selectedName]);
+  }
 
   const idByName = useMemo(() => {
     const map = new Map<string, string>();

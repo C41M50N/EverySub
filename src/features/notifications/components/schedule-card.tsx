@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
@@ -51,21 +51,16 @@ type Schedule = { timeZone: string; reminderLeadDays: number };
 
 export function ScheduleCard({ schedule }: { schedule: Schedule | null }) {
   const saveSchedule = useSaveNotificationSchedule();
-  const [timeZone, setTimeZone] = useState(schedule?.timeZone ?? '');
+  // Before the first save, suggest the browser's zone. This page only renders
+  // on the client, so it's known on the first render.
+  const [timeZone, setTimeZone] = useState(
+    () => schedule?.timeZone ?? getBrowserTimeZone() ?? FALLBACK_TIME_ZONE,
+  );
   const [leadDays, setLeadDays] = useState(
     schedule?.reminderLeadDays ?? DEFAULT_REMINDER_LEAD_DAYS,
   );
   const [error, setError] = useState<string | null>(null);
   const isSetUp = schedule !== null;
-
-  // The browser's zone is only known on the client, so suggest it after mount.
-  useEffect(() => {
-    if (!schedule) {
-      setTimeZone(
-        (current) => current || (getBrowserTimeZone() ?? FALLBACK_TIME_ZONE),
-      );
-    }
-  }, [schedule]);
 
   const isDirty =
     !isSetUp ||

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
@@ -24,22 +24,29 @@ interface RenameCollectionDialogProps {
 
 export function RenameCollectionDialog({
   open,
-  onOpenChange,
-  collection,
+  ...props
 }: RenameCollectionDialogProps) {
+  return (
+    <Dialog open={open} onOpenChange={props.onOpenChange}>
+      <DialogContent className="w-84">
+        <RenameCollectionForm {...props} />
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/**
+ * Mounts each time the dialog opens, so the input starts from the target
+ * collection's current name.
+ */
+function RenameCollectionForm({
+  collection,
+  onOpenChange,
+}: Omit<RenameCollectionDialogProps, 'open'>) {
   const renameCollection = useRenameCollection();
 
-  const [name, setName] = useState('');
+  const [name, setName] = useState(collection?.name ?? '');
   const [error, setError] = useState<string | null>(null);
-
-  // Sync the input to the target collection's current name each time the
-  // dialog opens.
-  useEffect(() => {
-    if (open) {
-      setName(collection?.name ?? '');
-      setError(null);
-    }
-  }, [open, collection?.name]);
 
   function handleSubmit(event: React.SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -79,46 +86,40 @@ export function RenameCollectionDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-84">
-        <form onSubmit={handleSubmit} className="grid gap-6">
-          <DialogHeader>
-            <DialogTitle>Rename collection</DialogTitle>
-            <DialogDescription>
-              Give this collection a new name.
-            </DialogDescription>
-          </DialogHeader>
-          <Field data-invalid={error ? true : undefined}>
-            <FieldLabel htmlFor="rename-collection-name">Name</FieldLabel>
-            <Input
-              id="rename-collection-name"
-              autoFocus
-              value={name}
-              onChange={(event) => {
-                setName(event.target.value);
-                if (error) {
-                  setError(null);
-                }
-              }}
-              placeholder="e.g. Personal, Work, Streaming"
-              aria-invalid={error ? true : undefined}
-              disabled={renameCollection.isPending}
-            />
-            <FieldError>{error}</FieldError>
-          </Field>
-          <DialogFooter>
-            <DialogClose
-              render={<Button variant="outline" type="button" />}
-              disabled={renameCollection.isPending}
-            >
-              Cancel
-            </DialogClose>
-            <Button type="submit" disabled={renameCollection.isPending}>
-              {renameCollection.isPending ? 'Saving…' : 'Save changes'}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+    <form onSubmit={handleSubmit} className="grid gap-6">
+      <DialogHeader>
+        <DialogTitle>Rename collection</DialogTitle>
+        <DialogDescription>Give this collection a new name.</DialogDescription>
+      </DialogHeader>
+      <Field data-invalid={error ? true : undefined}>
+        <FieldLabel htmlFor="rename-collection-name">Name</FieldLabel>
+        <Input
+          id="rename-collection-name"
+          autoFocus
+          value={name}
+          onChange={(event) => {
+            setName(event.target.value);
+            if (error) {
+              setError(null);
+            }
+          }}
+          placeholder="e.g. Personal, Work, Streaming"
+          aria-invalid={error ? true : undefined}
+          disabled={renameCollection.isPending}
+        />
+        <FieldError>{error}</FieldError>
+      </Field>
+      <DialogFooter>
+        <DialogClose
+          render={<Button variant="outline" type="button" />}
+          disabled={renameCollection.isPending}
+        >
+          Cancel
+        </DialogClose>
+        <Button type="submit" disabled={renameCollection.isPending}>
+          {renameCollection.isPending ? 'Saving…' : 'Save changes'}
+        </Button>
+      </DialogFooter>
+    </form>
   );
 }

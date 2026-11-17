@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
@@ -39,19 +39,34 @@ function getSharedCategoryId(subscriptions: SubscriptionRecord[]) {
     : null;
 }
 
-export function SetCategoryDialog({
-  open,
+export function SetCategoryDialog({ open, ...props }: SetCategoryDialogProps) {
+  return (
+    <Dialog open={open} onOpenChange={props.onOpenChange}>
+      <DialogContent className="w-96">
+        <SetCategoryForm {...props} />
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/**
+ * Mounts each time the dialog opens, so it starts from the category the
+ * subscriptions already share.
+ */
+function SetCategoryForm({
   onOpenChange,
   collectionId,
   subscriptions,
   categories,
   onCategorized,
-}: SetCategoryDialogProps) {
+}: Omit<SetCategoryDialogProps, 'open'>) {
   const categorizeSubscriptions = useCategorizeSubscriptions();
   const createCategory = useCreateCategory();
   const isPending = categorizeSubscriptions.isPending;
 
-  const [categoryId, setCategoryId] = useState<string | null>(null);
+  const [categoryId, setCategoryId] = useState(() =>
+    getSharedCategoryId(subscriptions),
+  );
   const [error, setError] = useState<string | null>(null);
 
   const count = subscriptions.length;
@@ -59,15 +74,6 @@ export function SetCategoryDialog({
     count === 1
       ? `“${subscriptions[0]?.name ?? ''}”`
       : `${count} subscriptions`;
-
-  // Start from the category the subscriptions already share each time the
-  // dialog opens.
-  useEffect(() => {
-    if (open) {
-      setCategoryId(getSharedCategoryId(subscriptions));
-      setError(null);
-    }
-  }, [open, subscriptions]);
 
   function handleChange(nextCategoryId: string | null) {
     setCategoryId(nextCategoryId);
@@ -132,45 +138,38 @@ export function SetCategoryDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-96">
-        <form onSubmit={handleSubmit} className="grid gap-6">
-          <DialogHeader>
-            <DialogTitle>Set category</DialogTitle>
-            <DialogDescription>
-              Choose a category for {target}, or type to add a new one.
-            </DialogDescription>
-          </DialogHeader>
-          <Field data-invalid={error ? true : undefined}>
-            <FieldLabel htmlFor="set-category">Category</FieldLabel>
-            <CategoryCombobox
-              id="set-category"
-              value={categoryId}
-              onChange={handleChange}
-              onCreate={handleCreateCategory}
-              categories={categories}
-              invalid={Boolean(error)}
-              disabled={isPending}
-              creating={createCategory.isPending}
-            />
-            <FieldError>{error}</FieldError>
-          </Field>
-          <DialogFooter>
-            <DialogClose
-              render={<Button variant="outline" type="button" />}
-              disabled={isPending}
-            >
-              Cancel
-            </DialogClose>
-            <Button
-              type="submit"
-              disabled={isPending || createCategory.isPending}
-            >
-              {isPending ? 'Saving…' : 'Save changes'}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+    <form onSubmit={handleSubmit} className="grid gap-6">
+      <DialogHeader>
+        <DialogTitle>Set category</DialogTitle>
+        <DialogDescription>
+          Choose a category for {target}, or type to add a new one.
+        </DialogDescription>
+      </DialogHeader>
+      <Field data-invalid={error ? true : undefined}>
+        <FieldLabel htmlFor="set-category">Category</FieldLabel>
+        <CategoryCombobox
+          id="set-category"
+          value={categoryId}
+          onChange={handleChange}
+          onCreate={handleCreateCategory}
+          categories={categories}
+          invalid={Boolean(error)}
+          disabled={isPending}
+          creating={createCategory.isPending}
+        />
+        <FieldError>{error}</FieldError>
+      </Field>
+      <DialogFooter>
+        <DialogClose
+          render={<Button variant="outline" type="button" />}
+          disabled={isPending}
+        >
+          Cancel
+        </DialogClose>
+        <Button type="submit" disabled={isPending || createCategory.isPending}>
+          {isPending ? 'Saving…' : 'Save changes'}
+        </Button>
+      </DialogFooter>
+    </form>
   );
 }
