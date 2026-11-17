@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
@@ -89,11 +89,27 @@ type DestinationFormDialogProps = {
 /** Adds a Discord or generic webhook, or edits any destination. */
 export function DestinationFormDialog({
   open,
+  ...props
+}: DestinationFormDialogProps) {
+  return (
+    <Dialog open={open} onOpenChange={props.onOpenChange}>
+      <DialogContent className="sm:max-w-lg">
+        <DestinationForm {...props} />
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/**
+ * Mounts each time the dialog opens, so it starts from the destination's saved
+ * name and an empty URL.
+ */
+function DestinationForm({
   onOpenChange,
   type: createType,
   destination,
   onCreated,
-}: DestinationFormDialogProps) {
+}: Omit<DestinationFormDialogProps, 'open'>) {
   const createDestination = useCreateWebhookDestination();
   const updateDestination = useUpdateDestination();
   const isEdit = Boolean(destination);
@@ -102,17 +118,9 @@ export function DestinationFormDialog({
     destination?.type ?? createType ?? 'webhook';
   const copy = type === 'email' ? null : COPY[type];
 
-  const [name, setName] = useState('');
+  const [name, setName] = useState(destination?.name ?? '');
   const [url, setUrl] = useState('');
   const [errors, setErrors] = useState<{ name?: string; url?: string }>({});
-
-  useEffect(() => {
-    if (open) {
-      setName(destination?.name ?? '');
-      setUrl('');
-      setErrors({});
-    }
-  }, [open, destination]);
 
   function handleSubmit(event: React.SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -187,87 +195,77 @@ export function DestinationFormDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
-        <form onSubmit={handleSubmit} className="grid gap-6" noValidate>
-          <DialogHeader>
-            <DialogTitle>
-              {isEdit
-                ? `Edit ${destination?.name ?? 'destination'}`
-                : copy?.title}
-            </DialogTitle>
-            <DialogDescription>
-              {type === 'email'
-                ? 'Rename this destination. Email always goes to your verified account address.'
-                : isEdit
-                  ? 'Rename this destination or replace its URL.'
-                  : `${copy?.description} Adding it doesn’t send anything until a collection routes notifications here.`}
-            </DialogDescription>
-          </DialogHeader>
+    <form onSubmit={handleSubmit} className="grid gap-6" noValidate>
+      <DialogHeader>
+        <DialogTitle>
+          {isEdit ? `Edit ${destination?.name ?? 'destination'}` : copy?.title}
+        </DialogTitle>
+        <DialogDescription>
+          {type === 'email'
+            ? 'Rename this destination. Email always goes to your verified account address.'
+            : isEdit
+              ? 'Rename this destination or replace its URL.'
+              : `${copy?.description} Adding it doesn’t send anything until a collection routes notifications here.`}
+        </DialogDescription>
+      </DialogHeader>
 
-          <Field data-invalid={errors.name ? true : undefined}>
-            <FieldLabel htmlFor="destination-name">Name</FieldLabel>
-            <Input
-              id="destination-name"
-              value={name}
-              onChange={(event) => {
-                setName(event.target.value);
-                setErrors((previous) => ({ ...previous, name: undefined }));
-              }}
-              placeholder={copy?.namePlaceholder}
-              aria-invalid={errors.name ? true : undefined}
-              disabled={isPending}
-              autoFocus
-            />
-            <FieldError>{errors.name}</FieldError>
-          </Field>
+      <Field data-invalid={errors.name ? true : undefined}>
+        <FieldLabel htmlFor="destination-name">Name</FieldLabel>
+        <Input
+          id="destination-name"
+          value={name}
+          onChange={(event) => {
+            setName(event.target.value);
+            setErrors((previous) => ({ ...previous, name: undefined }));
+          }}
+          placeholder={copy?.namePlaceholder}
+          aria-invalid={errors.name ? true : undefined}
+          disabled={isPending}
+          autoFocus
+        />
+        <FieldError>{errors.name}</FieldError>
+      </Field>
 
-          {copy ? (
-            <Field data-invalid={errors.url ? true : undefined}>
-              <FieldLabel htmlFor="destination-url">
-                {isEdit ? `New ${copy.urlLabel.toLowerCase()}` : copy.urlLabel}
-              </FieldLabel>
-              <Input
-                id="destination-url"
-                type="url"
-                inputMode="url"
-                autoComplete="off"
-                spellCheck={false}
-                value={url}
-                onChange={(event) => {
-                  setUrl(event.target.value);
-                  setErrors((previous) => ({ ...previous, url: undefined }));
-                }}
-                placeholder={
-                  isEdit
-                    ? `Leave blank to keep ${destination?.target ?? 'the saved URL'}`
-                    : copy.placeholder
-                }
-                aria-invalid={errors.url ? true : undefined}
-                disabled={isPending}
-              />
-              <FieldDescription>{copy.urlHelp}</FieldDescription>
-              <FieldError>{errors.url}</FieldError>
-            </Field>
-          ) : null}
+      {copy ? (
+        <Field data-invalid={errors.url ? true : undefined}>
+          <FieldLabel htmlFor="destination-url">
+            {isEdit ? `New ${copy.urlLabel.toLowerCase()}` : copy.urlLabel}
+          </FieldLabel>
+          <Input
+            id="destination-url"
+            type="url"
+            inputMode="url"
+            autoComplete="off"
+            spellCheck={false}
+            value={url}
+            onChange={(event) => {
+              setUrl(event.target.value);
+              setErrors((previous) => ({ ...previous, url: undefined }));
+            }}
+            placeholder={
+              isEdit
+                ? `Leave blank to keep ${destination?.target ?? 'the saved URL'}`
+                : copy.placeholder
+            }
+            aria-invalid={errors.url ? true : undefined}
+            disabled={isPending}
+          />
+          <FieldDescription>{copy.urlHelp}</FieldDescription>
+          <FieldError>{errors.url}</FieldError>
+        </Field>
+      ) : null}
 
-          <DialogFooter>
-            <DialogClose
-              render={<Button variant="outline" type="button" />}
-              disabled={isPending}
-            >
-              Cancel
-            </DialogClose>
-            <Button type="submit" disabled={isPending}>
-              {isPending
-                ? 'Saving…'
-                : isEdit
-                  ? 'Save changes'
-                  : 'Add destination'}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+      <DialogFooter>
+        <DialogClose
+          render={<Button variant="outline" type="button" />}
+          disabled={isPending}
+        >
+          Cancel
+        </DialogClose>
+        <Button type="submit" disabled={isPending}>
+          {isPending ? 'Saving…' : isEdit ? 'Save changes' : 'Add destination'}
+        </Button>
+      </DialogFooter>
+    </form>
   );
 }

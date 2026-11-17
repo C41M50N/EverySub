@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
@@ -53,21 +53,38 @@ export function RouteReviewDialog({
   onOpenChange,
   data,
 }: RouteReviewDialogProps) {
-  const setRoute = useSetRoute();
-  const [choices, setChoices] = useState<Map<string, boolean>>(new Map());
+  return (
+    <Dialog open={target !== null} onOpenChange={onOpenChange}>
+      <DialogContent className="flex max-h-[min(40rem,90svh)] flex-col gap-0 p-0 sm:max-w-lg">
+        <RouteReviewContent
+          target={target}
+          onOpenChange={onOpenChange}
+          data={data}
+        />
+      </DialogContent>
+    </Dialog>
+  );
+}
 
-  useEffect(() => {
-    if (target) {
-      setChoices(
-        new Map(
-          data.subscriptions.map((subscription) => [
-            subscription.id,
-            subscription.notificationsIncluded,
-          ]),
-        ),
-      );
-    }
-  }, [target, data.subscriptions]);
+/**
+ * Mounts each time the dialog opens, so the choices start from each
+ * subscription's saved inclusion.
+ */
+function RouteReviewContent({
+  target,
+  onOpenChange,
+  data,
+}: RouteReviewDialogProps) {
+  const setRoute = useSetRoute();
+  const [choices, setChoices] = useState(
+    () =>
+      new Map(
+        data.subscriptions.map((subscription) => [
+          subscription.id,
+          subscription.notificationsIncluded,
+        ]),
+      ),
+  );
 
   const includedCount = [...choices.values()].filter(Boolean).length;
   const destination = target?.destination;
@@ -104,62 +121,58 @@ export function RouteReviewDialog({
   }
 
   return (
-    <Dialog open={target !== null} onOpenChange={onOpenChange}>
-      <DialogContent className="flex max-h-[min(40rem,90svh)] flex-col gap-0 p-0 sm:max-w-lg">
-        <DialogHeader className="p-6 pb-4">
-          <DialogTitle>
-            Send {kindLabel} to “{destination?.name}”?
-          </DialogTitle>
-          <DialogDescription>
-            Review which of {data.collection.name}’s subscriptions can appear in
-            notifications. Excluded subscriptions never appear in any
-            notification, and their amounts aren’t counted in totals.
-          </DialogDescription>
-        </DialogHeader>
-        {target && data.schedule ? (
-          <p className="mx-6 mb-4 rounded-lg bg-muted/60 px-3 py-2 text-sm text-muted-foreground">
-            {describeStart(target.kind, data.schedule)}
-          </p>
-        ) : null}
-        <div className="flex items-center justify-between border-y px-6 py-2 text-sm">
-          <span className="font-medium">Subscriptions</span>
-          <span className="text-muted-foreground" aria-live="polite">
-            {includedCount} of {data.subscriptions.length} included
-          </span>
-        </div>
-        {data.subscriptions.length === 0 ? (
-          <p className="px-6 py-6 text-sm text-muted-foreground">
-            This collection has no subscriptions yet. New subscriptions are
-            included unless you turn them off.
-          </p>
-        ) : (
-          <ScrollArea className="min-h-0 flex-1 [--card-spacing:--spacing(6)]">
-            <InclusionList
-              subscriptions={data.subscriptions}
-              isIncluded={(subscription) =>
-                choices.get(subscription.id) ?? true
-              }
-              onChange={(subscription, included) =>
-                setChoices((previous) =>
-                  new Map(previous).set(subscription.id, included),
-                )
-              }
-              disabled={setRoute.isPending}
-            />
-          </ScrollArea>
-        )}
-        <DialogFooter className="m-0 border-t p-4">
-          <DialogClose
-            render={<Button variant="outline" type="button" />}
+    <>
+      <DialogHeader className="p-6 pb-4">
+        <DialogTitle>
+          Send {kindLabel} to “{destination?.name}”?
+        </DialogTitle>
+        <DialogDescription>
+          Review which of {data.collection.name}’s subscriptions can appear in
+          notifications. Excluded subscriptions never appear in any
+          notification, and their amounts aren’t counted in totals.
+        </DialogDescription>
+      </DialogHeader>
+      {target && data.schedule ? (
+        <p className="mx-6 mb-4 rounded-lg bg-muted/60 px-3 py-2 text-sm text-muted-foreground">
+          {describeStart(target.kind, data.schedule)}
+        </p>
+      ) : null}
+      <div className="flex items-center justify-between border-y px-6 py-2 text-sm">
+        <span className="font-medium">Subscriptions</span>
+        <span className="text-muted-foreground" aria-live="polite">
+          {includedCount} of {data.subscriptions.length} included
+        </span>
+      </div>
+      {data.subscriptions.length === 0 ? (
+        <p className="px-6 py-6 text-sm text-muted-foreground">
+          This collection has no subscriptions yet. New subscriptions are
+          included unless you turn them off.
+        </p>
+      ) : (
+        <ScrollArea className="min-h-0 flex-1 [--card-spacing:--spacing(6)]">
+          <InclusionList
+            subscriptions={data.subscriptions}
+            isIncluded={(subscription) => choices.get(subscription.id) ?? true}
+            onChange={(subscription, included) =>
+              setChoices((previous) =>
+                new Map(previous).set(subscription.id, included),
+              )
+            }
             disabled={setRoute.isPending}
-          >
-            Cancel
-          </DialogClose>
-          <Button onClick={handleConfirm} disabled={setRoute.isPending}>
-            {setRoute.isPending ? 'Turning on…' : `Turn on ${kindLabel}`}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+          />
+        </ScrollArea>
+      )}
+      <DialogFooter className="m-0 border-t p-4">
+        <DialogClose
+          render={<Button variant="outline" type="button" />}
+          disabled={setRoute.isPending}
+        >
+          Cancel
+        </DialogClose>
+        <Button onClick={handleConfirm} disabled={setRoute.isPending}>
+          {setRoute.isPending ? 'Turning on…' : `Turn on ${kindLabel}`}
+        </Button>
+      </DialogFooter>
+    </>
   );
 }

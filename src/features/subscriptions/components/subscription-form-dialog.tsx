@@ -1,6 +1,6 @@
 import { format, parseISO } from 'date-fns';
 import { CalendarIcon } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
@@ -201,6 +201,28 @@ function getInitialForm(
 
 export function SubscriptionFormDialog({
   open,
+  finalFocus,
+  onOpenChangeComplete,
+  ...props
+}: SubscriptionFormDialogProps) {
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={props.onOpenChange}
+      onOpenChangeComplete={onOpenChangeComplete}
+    >
+      <DialogContent className="sm:max-w-lg" finalFocus={finalFocus}>
+        <SubscriptionForm {...props} />
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/**
+ * Mounts each time the dialog opens, so it starts from the prefill or the
+ * subscription being edited.
+ */
+function SubscriptionForm({
   onOpenChange,
   collectionId,
   subscription,
@@ -208,13 +230,12 @@ export function SubscriptionFormDialog({
   prefill: createPrefill,
   categories,
   onCreated,
-  finalFocus,
-  onOpenChangeComplete,
-}: SubscriptionFormDialogProps) {
+}: Omit<
+  SubscriptionFormDialogProps,
+  'open' | 'finalFocus' | 'onOpenChangeComplete'
+>) {
   const isEdit = Boolean(subscription) || Boolean(review);
   const status = review ? review.status : subscription?.status;
-  // Review mode re-renders with new callbacks as pending categories change, so
-  // only a new prefill resets the form.
   const prefill = review?.prefill ?? createPrefill;
   const createSubscription = useCreateSubscription();
   const updateSubscription = useUpdateSubscription();
@@ -222,19 +243,10 @@ export function SubscriptionFormDialog({
   const isPending =
     createSubscription.isPending || updateSubscription.isPending;
 
-  const [form, setForm] = useState<FormState>(emptyForm);
+  const [form, setForm] = useState(() => getInitialForm(subscription, prefill));
   const [errors, setErrors] = useState<
     Partial<Record<keyof FormState, string>>
   >({});
-
-  useEffect(() => {
-    if (!open) {
-      return;
-    }
-
-    setForm(getInitialForm(subscription, prefill));
-    setErrors({});
-  }, [open, subscription, prefill]);
 
   function update<Key extends keyof FormState>(
     key: Key,
@@ -389,215 +401,201 @@ export function SubscriptionFormDialog({
   }
 
   return (
-    <Dialog
-      open={open}
-      onOpenChange={onOpenChange}
-      onOpenChangeComplete={onOpenChangeComplete}
-    >
-      <DialogContent className="sm:max-w-lg" finalFocus={finalFocus}>
-        <form onSubmit={handleSubmit} className="grid gap-6">
-          <DialogHeader>
-            <DialogTitle>
-              {isEdit ? 'Edit subscription' : 'Add subscription'}
-            </DialogTitle>
-            <DialogDescription>
-              {review
-                ? 'Changes apply to this import. Nothing is saved until you import.'
-                : isEdit
-                  ? 'Update the details for this subscription.'
-                  : 'Track a new subscription in this collection.'}
-            </DialogDescription>
-          </DialogHeader>
+    <form onSubmit={handleSubmit} className="grid gap-6">
+      <DialogHeader>
+        <DialogTitle>
+          {isEdit ? 'Edit subscription' : 'Add subscription'}
+        </DialogTitle>
+        <DialogDescription>
+          {review
+            ? 'Changes apply to this import. Nothing is saved until you import.'
+            : isEdit
+              ? 'Update the details for this subscription.'
+              : 'Track a new subscription in this collection.'}
+        </DialogDescription>
+      </DialogHeader>
 
-          <Field data-invalid={errors.iconRef ? true : undefined}>
-            <FieldLabel htmlFor="subscription-icon">Icon</FieldLabel>
-            <IconPicker
-              id="subscription-icon"
-              value={form.iconRef}
-              name={form.name}
-              onChange={(domain) => update('iconRef', domain)}
+      <Field data-invalid={errors.iconRef ? true : undefined}>
+        <FieldLabel htmlFor="subscription-icon">Icon</FieldLabel>
+        <IconPicker
+          id="subscription-icon"
+          value={form.iconRef}
+          name={form.name}
+          onChange={(domain) => update('iconRef', domain)}
+          disabled={isPending}
+          invalid={Boolean(errors.iconRef)}
+        />
+        <FieldError>{errors.iconRef}</FieldError>
+      </Field>
+
+      <Field data-invalid={errors.name ? true : undefined}>
+        <FieldLabel htmlFor="subscription-name">Name</FieldLabel>
+        <Input
+          id="subscription-name"
+          value={form.name}
+          onChange={(event) => update('name', event.target.value)}
+          placeholder="e.g. Netflix"
+          aria-invalid={errors.name ? true : undefined}
+          disabled={isPending}
+        />
+        <FieldError>{errors.name}</FieldError>
+      </Field>
+
+      <Field data-invalid={errors.categoryId ? true : undefined}>
+        <FieldLabel htmlFor="subscription-category">Category</FieldLabel>
+        <CategoryCombobox
+          id="subscription-category"
+          value={form.categoryId}
+          onChange={(value) => update('categoryId', value)}
+          onCreate={handleCreateCategory}
+          categories={categories}
+          invalid={Boolean(errors.categoryId)}
+          disabled={isPending}
+          creating={createCategory.isPending}
+        />
+        <FieldError>{errors.categoryId}</FieldError>
+      </Field>
+
+      <div className="grid gap-6 sm:grid-cols-2">
+        <Field data-invalid={errors.cost ? true : undefined}>
+          <FieldLabel htmlFor="subscription-cost">Cost</FieldLabel>
+          <InputGroup data-disabled={isPending || undefined}>
+            <InputGroupAddon>
+              <InputGroupText>$</InputGroupText>
+            </InputGroupAddon>
+            <InputGroupInput
+              id="subscription-cost"
+              value={form.cost}
+              onChange={(event) => handleCostChange(event.target.value)}
+              onBlur={handleCostBlur}
+              inputMode="decimal"
+              placeholder="0.00"
+              aria-invalid={errors.cost ? true : undefined}
               disabled={isPending}
-              invalid={Boolean(errors.iconRef)}
             />
-            <FieldError>{errors.iconRef}</FieldError>
-          </Field>
+            <InputGroupAddon align="inline-end">
+              <InputGroupText>USD</InputGroupText>
+            </InputGroupAddon>
+          </InputGroup>
+          <FieldError>{errors.cost}</FieldError>
+        </Field>
 
-          <Field data-invalid={errors.name ? true : undefined}>
-            <FieldLabel htmlFor="subscription-name">Name</FieldLabel>
-            <Input
-              id="subscription-name"
-              value={form.name}
-              onChange={(event) => update('name', event.target.value)}
-              placeholder="e.g. Netflix"
-              aria-invalid={errors.name ? true : undefined}
-              disabled={isPending}
-            />
-            <FieldError>{errors.name}</FieldError>
-          </Field>
-
-          <Field data-invalid={errors.categoryId ? true : undefined}>
-            <FieldLabel htmlFor="subscription-category">Category</FieldLabel>
-            <CategoryCombobox
-              id="subscription-category"
-              value={form.categoryId}
-              onChange={(value) => update('categoryId', value)}
-              onCreate={handleCreateCategory}
-              categories={categories}
-              invalid={Boolean(errors.categoryId)}
-              disabled={isPending}
-              creating={createCategory.isPending}
-            />
-            <FieldError>{errors.categoryId}</FieldError>
-          </Field>
-
-          <div className="grid gap-6 sm:grid-cols-2">
-            <Field data-invalid={errors.cost ? true : undefined}>
-              <FieldLabel htmlFor="subscription-cost">Cost</FieldLabel>
-              <InputGroup data-disabled={isPending || undefined}>
-                <InputGroupAddon>
-                  <InputGroupText>$</InputGroupText>
-                </InputGroupAddon>
-                <InputGroupInput
-                  id="subscription-cost"
-                  value={form.cost}
-                  onChange={(event) => handleCostChange(event.target.value)}
-                  onBlur={handleCostBlur}
-                  inputMode="decimal"
-                  placeholder="0.00"
-                  aria-invalid={errors.cost ? true : undefined}
-                  disabled={isPending}
-                />
-                <InputGroupAddon align="inline-end">
-                  <InputGroupText>USD</InputGroupText>
-                </InputGroupAddon>
-              </InputGroup>
-              <FieldError>{errors.cost}</FieldError>
-            </Field>
-
-            <Field>
-              <FieldLabel htmlFor="subscription-frequency">
-                Billing frequency
-              </FieldLabel>
-              <Select
-                value={form.costFrequency}
-                onValueChange={(value) =>
-                  update('costFrequency', value as SubscriptionCostFrequency)
-                }
-              >
-                <SelectTrigger
-                  id="subscription-frequency"
-                  className="w-full"
-                  disabled={isPending}
-                >
-                  <SelectValue>
-                    {(value) =>
-                      formatFrequency(value as SubscriptionCostFrequency)
-                    }
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  {FREQUENCY_OPTIONS.map((frequency) => (
-                    <SelectItem key={frequency} value={frequency}>
-                      {formatFrequency(frequency)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </Field>
-          </div>
-
-          <Field data-invalid={errors.nextInvoiceDate ? true : undefined}>
-            <FieldLabel htmlFor="subscription-next-invoice">
-              Next invoice
-            </FieldLabel>
-            <Popover>
-              <PopoverTrigger
-                render={
-                  <Button
-                    id="subscription-next-invoice"
-                    type="button"
-                    variant="outline"
-                    disabled={isPending}
-                    aria-invalid={errors.nextInvoiceDate ? true : undefined}
-                    className={cn(
-                      'w-full justify-start gap-2 font-normal',
-                      !form.nextInvoiceDate && 'text-muted-foreground',
-                    )}
-                  />
-                }
-              >
-                <CalendarIcon className="size-4 text-muted-foreground" />
-                {form.nextInvoiceDate
-                  ? formatInvoiceDate(form.nextInvoiceDate)
-                  : 'Pick a date'}
-              </PopoverTrigger>
-              <PopoverContent align="start" className="w-auto p-0">
-                <Calendar
-                  mode="single"
-                  selected={
-                    form.nextInvoiceDate
-                      ? parseISO(form.nextInvoiceDate)
-                      : undefined
-                  }
-                  onSelect={(date) => {
-                    if (date) {
-                      update('nextInvoiceDate', format(date, 'yyyy-MM-dd'));
-                    }
-                  }}
-                  autoFocus
-                />
-              </PopoverContent>
-            </Popover>
-            {status === 'inactive' && (
-              <FieldDescription>
-                Used to calculate the next invoice when reactivated.
-              </FieldDescription>
-            )}
-            <FieldError>{errors.nextInvoiceDate}</FieldError>
-          </Field>
-
-          {/* Imports are included by default; the switch returns once saved. */}
-          {review ? null : (
-            <Field orientation="horizontal">
-              <FieldContent>
-                <FieldLabel htmlFor="subscription-notifications">
-                  Include in notifications
-                </FieldLabel>
-                <FieldDescription>
-                  Lets this subscription and its recorded invoices appear in
-                  reminders and overviews for this collection.
-                </FieldDescription>
-              </FieldContent>
-              <Switch
-                id="subscription-notifications"
-                checked={form.notificationsIncluded}
-                onCheckedChange={(checked) =>
-                  update('notificationsIncluded', checked)
-                }
-                disabled={isPending}
-                aria-label="Include in notifications"
-              />
-            </Field>
-          )}
-
-          <DialogFooter>
-            <DialogClose
-              render={<Button variant="outline" type="button" />}
+        <Field>
+          <FieldLabel htmlFor="subscription-frequency">
+            Billing frequency
+          </FieldLabel>
+          <Select
+            value={form.costFrequency}
+            onValueChange={(value) =>
+              update('costFrequency', value as SubscriptionCostFrequency)
+            }
+          >
+            <SelectTrigger
+              id="subscription-frequency"
+              className="w-full"
               disabled={isPending}
             >
-              Cancel
-            </DialogClose>
-            <Button type="submit" disabled={isPending}>
-              {isPending
-                ? 'Saving…'
-                : isEdit
-                  ? 'Save changes'
-                  : 'Add subscription'}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+              <SelectValue>
+                {(value) => formatFrequency(value as SubscriptionCostFrequency)}
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              {FREQUENCY_OPTIONS.map((frequency) => (
+                <SelectItem key={frequency} value={frequency}>
+                  {formatFrequency(frequency)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </Field>
+      </div>
+
+      <Field data-invalid={errors.nextInvoiceDate ? true : undefined}>
+        <FieldLabel htmlFor="subscription-next-invoice">
+          Next invoice
+        </FieldLabel>
+        <Popover>
+          <PopoverTrigger
+            render={
+              <Button
+                id="subscription-next-invoice"
+                type="button"
+                variant="outline"
+                disabled={isPending}
+                aria-invalid={errors.nextInvoiceDate ? true : undefined}
+                className={cn(
+                  'w-full justify-start gap-2 font-normal',
+                  !form.nextInvoiceDate && 'text-muted-foreground',
+                )}
+              />
+            }
+          >
+            <CalendarIcon className="size-4 text-muted-foreground" />
+            {form.nextInvoiceDate
+              ? formatInvoiceDate(form.nextInvoiceDate)
+              : 'Pick a date'}
+          </PopoverTrigger>
+          <PopoverContent align="start" className="w-auto p-0">
+            <Calendar
+              mode="single"
+              selected={
+                form.nextInvoiceDate
+                  ? parseISO(form.nextInvoiceDate)
+                  : undefined
+              }
+              onSelect={(date) => {
+                if (date) {
+                  update('nextInvoiceDate', format(date, 'yyyy-MM-dd'));
+                }
+              }}
+              autoFocus
+            />
+          </PopoverContent>
+        </Popover>
+        {status === 'inactive' && (
+          <FieldDescription>
+            Used to calculate the next invoice when reactivated.
+          </FieldDescription>
+        )}
+        <FieldError>{errors.nextInvoiceDate}</FieldError>
+      </Field>
+
+      {/* Imports are included by default; the switch returns once saved. */}
+      {review ? null : (
+        <Field orientation="horizontal">
+          <FieldContent>
+            <FieldLabel htmlFor="subscription-notifications">
+              Include in notifications
+            </FieldLabel>
+            <FieldDescription>
+              Lets this subscription and its recorded invoices appear in
+              reminders and overviews for this collection.
+            </FieldDescription>
+          </FieldContent>
+          <Switch
+            id="subscription-notifications"
+            checked={form.notificationsIncluded}
+            onCheckedChange={(checked) =>
+              update('notificationsIncluded', checked)
+            }
+            disabled={isPending}
+            aria-label="Include in notifications"
+          />
+        </Field>
+      )}
+
+      <DialogFooter>
+        <DialogClose
+          render={<Button variant="outline" type="button" />}
+          disabled={isPending}
+        >
+          Cancel
+        </DialogClose>
+        <Button type="submit" disabled={isPending}>
+          {isPending ? 'Saving…' : isEdit ? 'Save changes' : 'Add subscription'}
+        </Button>
+      </DialogFooter>
+    </form>
   );
 }
 

@@ -1,6 +1,6 @@
 import { format, parseISO } from 'date-fns';
 import { CalendarIcon } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { toast } from 'sonner';
 
 import {
@@ -54,26 +54,38 @@ export function ReactivateSubscriptionDialog(
 
 function SingleReactivateDialog({
   open,
+  ...props
+}: ReactivateSubscriptionDialogProps) {
+  return (
+    <Dialog open={open} onOpenChange={props.onOpenChange}>
+      <DialogContent className="sm:max-w-md">
+        <SingleReactivateForm {...props} />
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/**
+ * Mounts each time the dialog opens, so it suggests the first invoice date on
+ * or after that day.
+ */
+function SingleReactivateForm({
   onOpenChange,
   subscriptions,
   onReactivated,
-}: ReactivateSubscriptionDialogProps) {
+}: Omit<ReactivateSubscriptionDialogProps, 'open'>) {
   const subscription = subscriptions[0];
   const reactivateSubscriptions = useReactivateSubscriptions();
-  const [nextInvoiceDate, setNextInvoiceDate] = useState('');
-  const today = format(new Date(), 'yyyy-MM-dd');
-
-  useEffect(() => {
-    if (open && subscription) {
-      setNextInvoiceDate(
-        getNextInvoiceDateOnOrAfter(
+  const [today] = useState(() => format(new Date(), 'yyyy-MM-dd'));
+  const [nextInvoiceDate, setNextInvoiceDate] = useState(() =>
+    subscription
+      ? getNextInvoiceDateOnOrAfter(
           subscription.nextInvoiceDate,
           subscription.costFrequency,
           today,
-        ),
-      );
-    }
-  }, [open, subscription, today]);
+        )
+      : '',
+  );
 
   function handleSubmit(event: React.SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -96,76 +108,66 @@ function SingleReactivateDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <form onSubmit={handleSubmit} className="flex flex-col gap-6">
-          <DialogHeader>
-            <DialogTitle>Reactivate “{subscription?.name ?? ''}”?</DialogTitle>
-            <DialogDescription>
-              Tracking resumes immediately. No invoices will be created for the
-              inactive period.
-            </DialogDescription>
-          </DialogHeader>
+    <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+      <DialogHeader>
+        <DialogTitle>Reactivate “{subscription?.name ?? ''}”?</DialogTitle>
+        <DialogDescription>
+          Tracking resumes immediately. No invoices will be created for the
+          inactive period.
+        </DialogDescription>
+      </DialogHeader>
 
-          <Field>
-            <FieldLabel htmlFor="reactivate-next-invoice">
-              Next invoice
-            </FieldLabel>
-            <Popover>
-              <PopoverTrigger
-                render={
-                  <Button
-                    id="reactivate-next-invoice"
-                    type="button"
-                    variant="outline"
-                    className="w-full justify-start font-normal"
-                    disabled={reactivateSubscriptions.isPending}
-                  />
-                }
-              >
-                <CalendarIcon data-icon="inline-start" />
-                {nextInvoiceDate
-                  ? formatInvoiceDate(nextInvoiceDate)
-                  : 'Pick a date'}
-              </PopoverTrigger>
-              <PopoverContent align="start" className="w-auto p-0">
-                <Calendar
-                  mode="single"
-                  selected={
-                    nextInvoiceDate ? parseISO(nextInvoiceDate) : undefined
-                  }
-                  disabled={{ before: parseISO(today) }}
-                  onSelect={(date) =>
-                    date && setNextInvoiceDate(format(date, 'yyyy-MM-dd'))
-                  }
-                  autoFocus
-                />
-              </PopoverContent>
-            </Popover>
-            <FieldDescription>
-              Choosing today may record an invoice on the next processing run.
-            </FieldDescription>
-          </Field>
+      <Field>
+        <FieldLabel htmlFor="reactivate-next-invoice">Next invoice</FieldLabel>
+        <Popover>
+          <PopoverTrigger
+            render={
+              <Button
+                id="reactivate-next-invoice"
+                type="button"
+                variant="outline"
+                className="w-full justify-start font-normal"
+                disabled={reactivateSubscriptions.isPending}
+              />
+            }
+          >
+            <CalendarIcon data-icon="inline-start" />
+            {nextInvoiceDate
+              ? formatInvoiceDate(nextInvoiceDate)
+              : 'Pick a date'}
+          </PopoverTrigger>
+          <PopoverContent align="start" className="w-auto p-0">
+            <Calendar
+              mode="single"
+              selected={nextInvoiceDate ? parseISO(nextInvoiceDate) : undefined}
+              disabled={{ before: parseISO(today) }}
+              onSelect={(date) =>
+                date && setNextInvoiceDate(format(date, 'yyyy-MM-dd'))
+              }
+              autoFocus
+            />
+          </PopoverContent>
+        </Popover>
+        <FieldDescription>
+          Choosing today may record an invoice on the next processing run.
+        </FieldDescription>
+      </Field>
 
-          <DialogFooter>
-            <DialogClose
-              render={<Button type="button" variant="outline" />}
-              disabled={reactivateSubscriptions.isPending}
-            >
-              Cancel
-            </DialogClose>
-            <Button
-              type="submit"
-              disabled={reactivateSubscriptions.isPending || !nextInvoiceDate}
-            >
-              {reactivateSubscriptions.isPending
-                ? 'Reactivating…'
-                : 'Reactivate'}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+      <DialogFooter>
+        <DialogClose
+          render={<Button type="button" variant="outline" />}
+          disabled={reactivateSubscriptions.isPending}
+        >
+          Cancel
+        </DialogClose>
+        <Button
+          type="submit"
+          disabled={reactivateSubscriptions.isPending || !nextInvoiceDate}
+        >
+          {reactivateSubscriptions.isPending ? 'Reactivating…' : 'Reactivate'}
+        </Button>
+      </DialogFooter>
+    </form>
   );
 }
 

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
@@ -24,19 +24,25 @@ type EmailDestinationDialogProps = {
 
 export function EmailDestinationDialog({
   open,
+  ...props
+}: EmailDestinationDialogProps) {
+  return (
+    <Dialog open={open} onOpenChange={props.onOpenChange}>
+      <DialogContent className="sm:max-w-md">
+        <EmailDestinationForm {...props} />
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/** Mounts each time the dialog opens, so it starts from the default name. */
+function EmailDestinationForm({
   onOpenChange,
   accountEmail,
-}: EmailDestinationDialogProps) {
+}: Omit<EmailDestinationDialogProps, 'open'>) {
   const createDestination = useCreateEmailDestination();
   const [name, setName] = useState('Email');
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (open) {
-      setName('Email');
-      setError(null);
-    }
-  }, [open]);
 
   function handleSubmit(event: React.SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -61,48 +67,42 @@ export function EmailDestinationDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <form onSubmit={handleSubmit} className="grid gap-6">
-          <DialogHeader>
-            <DialogTitle>Add email</DialogTitle>
-            <DialogDescription>
-              Notifications go to your verified account email,{' '}
-              <span className="font-medium text-foreground">
-                {accountEmail}
-              </span>
-              . If you change that address, email pauses until the new one is
-              verified. Adding email doesn’t send anything until a collection
-              routes notifications to it.
-            </DialogDescription>
-          </DialogHeader>
-          <Field data-invalid={error ? true : undefined}>
-            <FieldLabel htmlFor="email-destination-name">Name</FieldLabel>
-            <Input
-              id="email-destination-name"
-              value={name}
-              onChange={(event) => {
-                setName(event.target.value);
-                setError(null);
-              }}
-              aria-invalid={error ? true : undefined}
-              disabled={createDestination.isPending}
-            />
-            <FieldError>{error}</FieldError>
-          </Field>
-          <DialogFooter>
-            <DialogClose
-              render={<Button variant="outline" type="button" />}
-              disabled={createDestination.isPending}
-            >
-              Cancel
-            </DialogClose>
-            <Button type="submit" disabled={createDestination.isPending}>
-              {createDestination.isPending ? 'Adding…' : 'Add email'}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+    <form onSubmit={handleSubmit} className="grid gap-6">
+      <DialogHeader>
+        <DialogTitle>Add email</DialogTitle>
+        <DialogDescription>
+          Notifications go to your verified account email,{' '}
+          <span className="font-medium text-foreground">{accountEmail}</span>.
+          If you change that address, email pauses until the new one is
+          verified. Adding email doesn’t send anything until a collection routes
+          notifications to it.
+        </DialogDescription>
+      </DialogHeader>
+      <Field data-invalid={error ? true : undefined}>
+        <FieldLabel htmlFor="email-destination-name">Name</FieldLabel>
+        <Input
+          id="email-destination-name"
+          value={name}
+          onChange={(event) => {
+            setName(event.target.value);
+            setError(null);
+          }}
+          aria-invalid={error ? true : undefined}
+          disabled={createDestination.isPending}
+        />
+        <FieldError>{error}</FieldError>
+      </Field>
+      <DialogFooter>
+        <DialogClose
+          render={<Button variant="outline" type="button" />}
+          disabled={createDestination.isPending}
+        >
+          Cancel
+        </DialogClose>
+        <Button type="submit" disabled={createDestination.isPending}>
+          {createDestination.isPending ? 'Adding…' : 'Add email'}
+        </Button>
+      </DialogFooter>
+    </form>
   );
 }
