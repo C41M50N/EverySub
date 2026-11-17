@@ -75,6 +75,7 @@ export function SiteFooter() {
         )}
       >
         <p className="text-sm/4.5 text-ink-muted">
+          {/* oxlint-disable-next-line react/purity -- Only the year is read, so a stale or mismatched value is limited to New Year's. */}
           © {new Date().getFullYear()} EverySub. Open source and built in
           public.
         </p>
@@ -102,7 +103,10 @@ export function CompactFooter({ className }: { className?: string }) {
         className,
       )}
     >
-      <p className="text-[#6B7380]">© {new Date().getFullYear()} EverySub</p>
+      <p className="text-[#6B7380]">
+        {/* oxlint-disable-next-line react/purity -- Only the year is read, so a stale or mismatched value is limited to New Year's. */}
+        © {new Date().getFullYear()} EverySub
+      </p>
       <a
         href={REPOSITORY_URL}
         className={cn(

@@ -1,3 +1,5 @@
+import { useState } from 'react';
+
 import { Badge } from '@/components/ui/badge';
 import { Card, CardAction, CardHeader } from '@/components/ui/card';
 import {
@@ -58,7 +60,8 @@ export function CostMetrics({ items, selectedItems }: CostMetricsProps) {
   const monthlyCents = sumEffectiveMonthlyCents(costItems);
   const yearlyCents = sumEffectiveYearlyCents(costItems);
   const nextInvoice = findNextInvoice(items);
-  const upcoming = buildUpcomingWindow(items, new Date(), DUE_WINDOW_DAYS);
+  const [now] = useState(() => new Date());
+  const upcoming = buildUpcomingWindow(items, now, DUE_WINDOW_DAYS);
 
   return (
     <div className="grid gap-4 sm:grid-cols-3">
